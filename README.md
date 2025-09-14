@@ -5,11 +5,23 @@ This GitHub repositiory is for CSI 4900 - Honours Project.
 Karmalex is a virtual AI assistant that takes emotion into consideration and performs basic level Android phone tasks.
 
 ## Installation / Setup
-1. Download and install Android Studio Narwhal 3
+1. Download and install [Android Studio Narwhal 3](https://developer.android.com/studio)
 
 <!-- Add instruction on what dependencies, etc. are needed to run app -->
 
 ## Usage
 <!-- Add instruction on how to run the project after installation -->
+### Microphone Setup on Emulator
+To record audio through Android Studio emulator devices, ensure that the following is setup:
 
-<!-- Can later add screenshots -->
+**Step 1:**
+- In the emulator menu settings (located above the emulator screen), click the Extended Controls button
+![enable_mic_to_vm](/docs/imgs/enable_mic_to_vm.png)
+- Select Microphone tab, toggle ON "Virtual microphone uses host audio input"
+![extended_controls_menu](/docs/imgs/extended_controls_menu.png)
+
+**Step 2:**
+- In the emulator, open the Settings App and search Microphone. Select Microphone - Permission manager
+- Under Allowed only while in use section, select the app *Kramelix*
+- Select the option "Allow only while using the app"
+![microphone_permission](/docs/imgs/microphone_permissions.png)
