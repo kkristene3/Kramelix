@@ -35,5 +35,6 @@ public class MainActivity extends AppCompatActivity {
         PyObject caller = module.get("test_function");
 
         System.out.println("3+1 = " + caller.call(3));
+        System.out.println("hello?");
     }
 }
