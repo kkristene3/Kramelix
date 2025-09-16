@@ -1,23 +1,24 @@
 # Kramelix
 
-This GitHub repositiory is for CSI 4900 - Honours Project.
+This GitHub repository is for CSI 4900 - Honours Project.
 
 ## Description
 
-Kramelix is a virtual AI assistant that takes emotion into consideration and performs basic level Android phone tasks.
+Kramelix is a virtual AI assistant that takes emotion into consideration and performs basic-level Android phone tasks.
 
 ## Installation / Setup
 
-1. Download and install [Android Studio Narwhal 3](https://developer.android.com/studio)
+1. Download and install [Android Studio Narwhal 3](https://developer.android.com/studio).
+2. Clone this repository.
+3. In Android Studio, open the `Kramelix_app` folder as the top-level project folder
+4. In the bottom-left corner, click the build button (hammer icon) to sync all build files; if the build button doesn't appear, navigate from the top left main menu instead, and click "Assemble Project" from the build options dropdown. It may take a while to run, but Gradle should automatically install during this step, and a confirmation message ("BUILD SUCCESSFUL") should appear at the end.
+5. At the top, the app configuration should be set up automatically.
+6. Run the emulator.
+7. Click the "run app" button, and the Kramelix app should open within the emulator's display.
 
 <!-- Add instruction on what dependencies, etc. are needed to run app -->
 
 ## Gradle
-- Open the Kramelix_app folder as your top project folder
--   Sync build files (should auto-install Gradle if needed) by clicking the build (hammer icon) button, and the app configuration should appear automatically
--   Run the emulator first
--   Start the app (play button at the top)
--   Everything should work?
 
 ## Usage
 
@@ -25,7 +26,7 @@ Kramelix is a virtual AI assistant that takes emotion into consideration and per
 
 ### Microphone Setup on Emulator
 
-To record audio through Android Studio emulator devices, ensure that the following is setup:
+To record audio through Android Studio emulator devices, ensure that the following is set up:
 
 **Step 1:**
 
@@ -36,7 +37,7 @@ To record audio through Android Studio emulator devices, ensure that the followi
 
 **Step 2:**
 
--   In the emulator, open the Settings App and search Microphone. Select Microphone - Permission manager
--   Under Allowed only while in use section, select the app _Kramelix_
+-   In the emulator, open the Settings App and search Microphone. Select Microphone - Permission Manager
+-   Under the "Allowed only while in use" section, select the app _Kramelix_
 -   Select the option "Allow only while using the app"
     ![microphone_permission](/docs/imgs/microphone_permissions.png)
