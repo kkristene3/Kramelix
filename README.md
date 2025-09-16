@@ -16,6 +16,11 @@ Kramelix is a virtual AI assistant that takes emotion into consideration and per
 6. Run the emulator.
 7. Click the "run app" button, and the Kramelix app should open within the emulator's display.
 
+### Troubleshooting Builds / GitIgnore Information
+
+-   To completely reset the project build, delete the local instances of `/Kramelix_app/.gradle`, `/Kramelix_app/build`, and `/Kramelix_app/app/build`. Afterwards, start from step 4 of the Installation/Setup section above, and these folders should rebuild.
+-   When committing files, the `.gitignore` file will automatically filter out any local build folders that don't need to be shared between developers. This mainly includes the above-mentioned folders^. **Anything else should be committed.**
+
 <!-- Add instruction on what dependencies, etc. are needed to run app -->
 
 ## Gradle
