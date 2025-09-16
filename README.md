@@ -13,8 +13,11 @@ Kramelix is a virtual AI assistant that takes emotion into consideration and per
 <!-- Add instruction on what dependencies, etc. are needed to run app -->
 
 ## Gradle
-
--   Sync build files (should auto-install Gradle if needed), and the app configuration should appear automatically
+- Open the Kramelix_app folder as your top project folder
+-   Sync build files (should auto-install Gradle if needed) by clicking the build (hammer icon) button, and the app configuration should appear automatically
+-   Run the emulator first
+-   Start the app (play button at the top)
+-   Everything should work?
 
 ## Usage
 
