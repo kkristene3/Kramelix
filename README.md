@@ -14,6 +14,8 @@ Kramelix is a virtual AI assistant that takes emotion into consideration and per
 
 ## Gradle
 
+-   Sync build files (should auto-install Gradle if needed), and the app configuration should appear automatically
+
 ## Usage
 
 <!-- Add instruction on how to run the project after installation -->
