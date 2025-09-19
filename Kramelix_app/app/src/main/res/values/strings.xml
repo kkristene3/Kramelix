@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Kramelix</string>
+    <string name="empty_string" />
+    <string name="stop_recording">STOP RECORDING</string>
+    <string name="start_recording">START RECORDING</string>
+    <string name="kramelix_title">KRAMELIX</string>
 </resources>

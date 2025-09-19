@@ -1,31 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp">
+    tools:context=".MainActivity">
+
+
+    <TextView
+        android:id="@+id/app_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="60dp"
+        android:layout_marginTop="104dp"
+        android:layout_marginEnd="60dp"
+        android:fontFamily="@font/inter_black"
+        android:letterSpacing="0.1"
+        android:text="@string/kramelix_title"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textColor="@color/primary_color"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        android:typeface="normal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ToggleButton
         android:id="@+id/recordButton"
-        android:layout_width="match_parent"
+        android:layout_width="106dp"
+        android:layout_height="99dp"
+        android:layout_marginStart="152dp"
+        android:layout_marginTop="435dp"
+        android:layout_marginEnd="153dp"
+        android:layout_marginBottom="197dp"
+        android:background="@drawable/microphone"
+        android:checked="false"
+        android:textOff="@string/empty_string"
+        android:textOn="@string/empty_string"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="ExtraText" />
+
+    <TextView
+        android:id="@+id/recordText"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textOn="Stop Recording"
-        android:textOff="Start Recording" />
+        android:layout_marginStart="143dp"
+        android:layout_marginTop="542dp"
+        android:layout_marginEnd="143dp"
+        android:layout_marginBottom="170dp"
+        android:clickable="false"
+        android:text="@string/start_recording"
+        android:textAlignment="center"
+        android:textAllCaps="true"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ToggleButton
         android:id="@+id/playRecButton"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textOn="Stop Playback"
+        android:layout_marginStart="137dp"
+        android:layout_marginTop="584dp"
+        android:layout_marginEnd="136dp"
+        android:layout_marginBottom="99dp"
+        android:text="@string/empty_string"
         android:textOff="Play Recording"
-        android:layout_marginTop="12dp" />
+        android:textOn="Stop Playing"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"  />
 
     <Button
         android:id="@+id/transcribeButton"
-        android:layout_width="match_parent"
+        android:layout_width="363dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="33dp"
         android:text="Transcribe"
-        android:layout_marginTop="12dp" />
+        android:backgroundTint="@color/primary_color"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

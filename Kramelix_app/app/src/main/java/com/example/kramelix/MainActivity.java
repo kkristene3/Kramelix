@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton recordButton;
     private ToggleButton playRecButton;
     private Button transcribeButton;
+    private TextView recordText;
 
     private MediaPlayer mediaPlayer;
     private PcmRecorder pcmRecorder = new PcmRecorder();
@@ -73,12 +75,14 @@ public class MainActivity extends AppCompatActivity {
         recordButton = findViewById(R.id.recordButton);
         playRecButton = findViewById(R.id.playRecButton);
         transcribeButton = findViewById(R.id.transcribeButton);
+        recordText = findViewById(R.id.recordText);
 
         // RECORD toggle
         recordButton.setOnClickListener(v -> {
             if (recordButton.isChecked()) {
                 if (hasRecordPermission()) {
                     startRecording();
+                    recordText.setText(R.string.stop_recording); // change text when recorder is clicked
                 } else {
                     recordPendingAfterPermission = true;
                     ActivityCompat.requestPermissions(this,
@@ -87,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else {
                 stopRecording();
+                recordText.setText(R.string.start_recording); // change text when recorder is turned off
             }
         });
 
