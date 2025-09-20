@@ -2,6 +2,11 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="primary_color">#AB2565</color>
-
+    <color name="raisin_black">#1E1E2E</color>
+    <!-- Light Mode Colours -->
+    <color name="custom_pink">#FF6FB5</color> <!-- Hot Pink -->
+    <color name="custom_yellow">#FFD93D</color> <!-- Mustard -->
+    <color name="custom_green">#4CAF50</color> <!-- Pigment Green-->
+    <color name="custom_blue">#56CCF2</color> <!-- Vivid Sky Blue -->
+    <color name="custom_extra">#F1F3F4</color> <!-- Anti-flash White -->
 </resources>

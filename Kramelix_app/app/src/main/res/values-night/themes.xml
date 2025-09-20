@@ -2,9 +2,7 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.Kramelix" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
-        <!-- <attr name="new color name">@color/name of color</attr> -->
-        <item name= "colorPrimary">@color/primary_color</item>
+        <item name="android:colorBackground">@color/custom_extra</item>
 
     </style>
 </resources>
