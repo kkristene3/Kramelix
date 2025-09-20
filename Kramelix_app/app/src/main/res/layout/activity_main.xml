@@ -1,42 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView  xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:fillViewport="true">
 
-
-
-    <TextView
-        android:id="@+id/app_title"
-        android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="60dp"
-        android:layout_marginTop="180dp"
-        android:layout_marginEnd="60dp"
-        android:fontFamily="@font/inter_black"
-        android:shadowColor="#40000000"
-        android:shadowDx="6"
-        android:shadowDy="8"
-        android:shadowRadius="8"
-        android:text="@string/kramelix_title"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textColor="@color/custom_pink"
-        android:textSize="55sp"
-        android:textStyle="bold"
-        android:typeface="normal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        tools:context=".MainActivity">
 
-    <TextView
+        <TextView
+            android:id="@+id/app_title"
+            android:layout_width="312dp"
+            android:layout_height="81dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="76dp"
+            android:layout_marginEnd="24dp"
+            android:fontFamily="@font/inter_black"
+            android:shadowColor="#40000000"
+            android:shadowDx="6"
+            android:shadowDy="8"
+            android:shadowRadius="8"
+            android:text="@string/kramelix_title"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textSize="55sp"
+            android:textStyle="bold"
+            android:typeface="normal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.484"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
         android:id="@+id/transcriptionOutput"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="40dp"
-        android:layout_marginTop="275dp"
+        android:layout_marginTop="15dp"
         android:layout_marginEnd="40dp"
         android:background="@drawable/textview_rounded"
         android:fontFamily="@font/inter_medium"
@@ -46,42 +51,43 @@
         android:textAlignment="viewStart"
         android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.454"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/app_title"
+        tools:ignore="RtlCompat" />
 
     <ToggleButton
         android:id="@+id/recordButton"
         android:layout_width="106dp"
         android:layout_height="99dp"
-        android:layout_marginStart="152dp"
-        android:layout_marginEnd="153dp"
-        android:layout_marginBottom="131dp"
         android:background="@drawable/microphone"
         android:checked="false"
         android:textOff="@string/empty_string"
         android:textOn="@string/empty_string"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/transcriptionOutput"
+        app:layout_constraintBottom_toTopOf="@+id/recordText"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintVertical_bias="2.0"
         tools:ignore="ExtraText" />
 
     <TextView
         android:id="@+id/recordText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="143dp"
-        android:layout_marginEnd="136dp"
-        android:layout_marginBottom="110dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="12dp"
         android:clickable="false"
         android:fontFamily="@font/inter_medium"
         android:text="@string/start_recording"
         android:textAlignment="center"
         android:textAllCaps="true"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/playRecButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/recordButton" />
 
     <ToggleButton
         android:id="@+id/playRecButton"
@@ -116,5 +122,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/playRecButton" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+
