@@ -21,8 +21,8 @@ To view the general layout of the app, visit the
 
 ### Dark Mode
 ![color_scheme_dark](/docs/imgs/colour_palette_dark.png)
-- **Charcoal:** `#FF6FB5`
-- **Persian Pink:** `#FFD93D`
-- **Mindaro:** `#4CAF50`
-- **Spring Green:** `#56CCF2`
-- **Cornflower blue:** `#F1F3F4`
+- **Charcoal:** `#44475A`
+- **Persian Pink:** `#FF79C6`
+- **Mindaro:** `#F1FA8C`
+- **Spring Green:** `#50FA7B`
+- **Cornflower Blue:** `#5194FF`
