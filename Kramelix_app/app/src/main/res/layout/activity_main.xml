@@ -37,24 +37,25 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-        android:id="@+id/transcriptionOutput"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="40dp"
-        android:layout_marginTop="15dp"
-        android:layout_marginEnd="40dp"
-        android:background="@drawable/textview_rounded"
-        android:fontFamily="@font/inter_medium"
-        android:gravity="center"
-        android:padding="20dp"
-        android:text="OUTPUT TRANSCRIPTION INTO THIS TEXT VIEW"
-        android:textAlignment="viewStart"
-        android:textColor="@color/white"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/app_title"
-        tools:ignore="RtlCompat" />
+            android:id="@+id/transcriptionOutput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="40dp"
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="40dp"
+            android:background="@drawable/textview_rounded"
+            android:fontFamily="@font/inter_medium"
+            android:text="@string/recording_instructions"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:padding="20dp"
+            android:textAlignment="viewStart"
+            android:textColor="@color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/app_title"
+            tools:ignore="RtlCompat" />
 
     <ToggleButton
         android:id="@+id/recordButton"
@@ -89,39 +90,39 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/recordButton" />
 
-    <ToggleButton
-        android:id="@+id/playRecButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="40dp"
-        android:background="@drawable/toggle_button_bg"
-        android:fontFamily="@font/inter_medium"
-        android:text="@string/empty_string"
-        android:textColor="@color/raisin_black"
-        android:textOff="@string/play_recording"
-        android:textOn="@string/stop_playing"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/transcribeButton"
-        app:layout_constraintStart_toStartOf="parent" />
+        <ToggleButton
+            android:id="@+id/playRecButton"
+            android:layout_width="168dp"
+            android:layout_height="45dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="36dp"
+            android:background="@drawable/toggle_button_bg"
+            android:fontFamily="@font/inter_medium"
+            android:text="@string/empty_string"
+            android:textColor="@color/raisin_black"
+            android:textOff="@string/play_recording"
+            android:textOn="@string/stop_playing"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/transcribeButton"
+            app:layout_constraintStart_toStartOf="parent" />
 
-    <Button
-        android:id="@+id/transcribeButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="30dp"
-        android:layout_marginBottom="40dp"
-        android:backgroundTint="@color/custom_green"
-        android:fontFamily="@font/inter_medium"
-        android:text="@string/transcribe"
-        android:textAllCaps="true"
-        android:textColor="@color/raisin_black"
-        android:textSize="14sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/playRecButton" />
+        <Button
+            android:id="@+id/transcribeButton"
+            android:layout_width="164dp"
+            android:layout_height="51dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="30dp"
+            android:layout_marginBottom="32dp"
+            android:backgroundTint="@color/custom_green"
+            android:fontFamily="@font/inter_medium"
+            android:text="@string/transcribe"
+            android:textAllCaps="true"
+            android:textColor="@color/raisin_black"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/playRecButton" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
 

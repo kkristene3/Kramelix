@@ -50,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
     private File wavPath;              // recording.wav in app's music dir
     private File modelFile;            // copied from assets/models/ggml-base.en.bin
 
+    private TextView transcriptionText;
+
     private boolean recordPendingAfterPermission = false; // if user tapped record before granting permission
 
     @Override
@@ -76,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
         playRecButton = findViewById(R.id.playRecButton);
         transcribeButton = findViewById(R.id.transcribeButton);
         recordText = findViewById(R.id.recordText);
+        transcriptionText = findViewById(R.id.transcriptionOutput);
 
         // RECORD toggle
         recordButton.setOnClickListener(v -> {
@@ -128,6 +131,8 @@ public class MainActivity extends AppCompatActivity {
             long size = wavPath.length();
             Toast.makeText(this, "Saved: " + size + " bytes\n" + wavPath.getAbsolutePath(), Toast.LENGTH_SHORT).show();
             Log.i(TAG, "WAV saved, size=" + size + " path=" + wavPath);
+            //give the user transcription instructions
+            transcriptionText.setText("New audio recorded. Please press the \"Transcribe\" button to see the transcription");
             recordButton.setChecked(false);
         } catch (Exception e) {
             Log.e(TAG, "stopRecording failed", e);
@@ -188,15 +193,20 @@ public class MainActivity extends AppCompatActivity {
         transcribeButton.setEnabled(false);
         transcribeButton.setText("Transcribing...");
 
+
+
         new Thread(() -> {
             String text = Whisper.transcribeWav(wavPath.getAbsolutePath());
             Log.i(TAG, "TRANSCRIPT: " + text);
             runOnUiThread(() -> {
                 transcribeButton.setEnabled(true);
                 transcribeButton.setText("Transcribe");
-                Toast.makeText(this, text, Toast.LENGTH_LONG).show();
+                //Toast.makeText(this, text, Toast.LENGTH_LONG).show();
+                //add transcription to the TextField at the top of the screen
+                transcriptionText.setText(text);
             });
         }, "whisper-transcribe").start();
+
     }
 
     // -------------------- Permissions --------------------
