@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Kramelix</string>
+    <string name="empty_string" />
+    <string name="stop_recording">STOP RECORDING</string>
+    <string name="start_recording">START RECORDING</string>
+    <string name="kramelix_title"><font color='#FF6FB5'>KR</font><font color='#4CAF50'>AM</font><font color='#56CCF2'>E</font><font color='#FFD93D'>L</font><font color='#56CCF2'>I</font><font color='#FFD93D'>X</font></string>
+    <string name="play_recording">Play Recording</string>
+    <string name="stop_playing">Stop Playing</string>
+    <string name="transcribe">Transcribe</string>
 </resources>

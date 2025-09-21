@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Mode Colors -->
+    <color name="custom_pink">#FF79C6</color> <!-- Persian Pink -->
+    <color name="custom_yellow">#F1FA8C</color> <!-- Mindaro -->
+    <color name="custom_green">#50FA7B</color> <!-- Spring Green -->
+    <color name="custom_blue">#5194FF</color> <!-- Cornflower Blue -->
+    <color name="custom_extra">#44475A</color> <!-- Charcoal -->
+</resources>
