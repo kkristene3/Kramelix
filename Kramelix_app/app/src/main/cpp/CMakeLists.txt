@@ -5,7 +5,7 @@
 
 cmake_minimum_required(VERSION 3.22) # pinning the minimum CMake ver. required for our build
 project(whisper_android) # naming the native project for logs/IDE metadata
-set(CMAKE_CXX_STANDARD 17) # declaring C++ bc whisper.cpp expect >= C++ 17
+set(CMAKE_CXX_STANDARD 17) # declaring C++ bc whisper.cpp expects >= C++ 17
 
 set(WHISPER_CPP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/whisper.cpp) # locating whisper.cpp
 message(STATUS "Using WHISPER_CPP_DIR = ${WHISPER_CPP_DIR}") # printing repo path for logs
