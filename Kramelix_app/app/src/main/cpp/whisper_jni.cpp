@@ -1,6 +1,6 @@
 /*
  * AMY'S NOTE: This file connects our Java code to C++ (the Whisper.cpp repo) like a bridge,
- * using the Java Native Interface (JNI). We later call the two functions below to run
+ * using the Java Native Interface (JNI). We later call the two main functions below to run
  * the native code and return the results.
  */
 
@@ -13,7 +13,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "whisper.h" // whisper.cpp public API
+#include "whisper.h" // Whisper.cpp public API
 
 // Adding log macros for convenience ("whisper_jni" tag before msgs)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO , "whisper_jni", __VA_ARGS__)
@@ -55,7 +55,7 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
     if (fread(riff, 1, 4, f) != 4
         || fread(&riff_size, 4, 1, f) != 1
         || fread(wave, 1, 4, f) != 4
-        || memcmp(riff, "RIFF", 4) || memcmp(wave, "WAVE", 4)) { // invalid header -> therefore, not a standard WAV
+        || memcmp(riff, "RIFF", 4) != 0 || memcmp(wave, "WAVE", 4) != 0) { // invalid header -> therefore, not a standard WAV
 
         // OUTPUT:
         LOGE("No RIFF/WAVE found in the WAV header!");
@@ -166,7 +166,7 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
 
                 unsigned char b[3];
                 fread(b, 1, 3, f);
-                int32_t v = (int32_t) ((b[0]) | (b[1] << 8) | (b[2] << 16));
+                auto v = (int32_t) ((b[0]) | (b[1] << 8) | (b[2] << 16));
 
                 if (v & 0x800000) v |= ~0xFFFFFF; // sign-extend bit 23
                 acc += (double) v / 8388608.0; // normalizing
@@ -211,12 +211,12 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
     for (size_t i = 0; i < outN; ++i) {
 
         double srcPos = (double) i / ratio; // fractional index (a point in time) within larger input (full src timeline)
-        size_t i0 = (size_t) srcPos; // left neighbour
+        auto i0 = (size_t) srcPos; // left neighbour
         size_t i1 = std::min(mono.size() - 1, i0 + 1); // right neighbour (clamped)
         double time = srcPos - i0; // fractional part 0 ... 1
 
         // PROCESS: linear interpolation btwn neighbours to give approx. of the audio signal at srcPos
-        float signal = (float)((1.0 - time) * mono[i0] + time * mono[i1]);
+        auto signal = (float)((1.0 - time) * mono[i0] + time * mono[i1]);
         pcmf32_out[i] = signal;
 
     }

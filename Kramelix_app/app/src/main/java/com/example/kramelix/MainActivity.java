@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView recordText;
 
     private MediaPlayer mediaPlayer;
-    private PcmRecorder pcmRecorder = new PcmRecorder();
+    private final PcmRecorder pcmRecorder = new PcmRecorder();
 
     private File wavPath;              // recording.wav in app's music dir
     private File modelFile;            // copied from assets/models/ggml-base.en.bin
@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         // Then, we initialize the native model once, and reuse that context for all transcriptions.
 
         // Copying model once from assets to files, then initializing JNI
-        modelFile = ensureModelCopiedOnce("ggml-tiny.en.bin");
+        modelFile = ensureModelCopiedOnce();
 
         if (modelFile == null) { // error-handling
             // TODO: consider updating this error toast to a log msg instead
@@ -261,13 +261,13 @@ public class MainActivity extends AppCompatActivity {
     // -------------------- Asset copy --------------------
 
     /** Copy assets/models/<filename> to files/models/<filename> once, return the out File. */
-    private File ensureModelCopiedOnce(String filename) {
+    private File ensureModelCopiedOnce() {
         try {
             File outDir = new File(getFilesDir(), "models");
             if (!outDir.exists()) outDir.mkdirs();
-            File out = new File(outDir, filename);
+            File out = new File(outDir, "ggml-tiny.en.bin");
             if (!out.exists()) {
-                try (InputStream in = getAssets().open("models/" + filename);
+                try (InputStream in = getAssets().open("models/" + "ggml-tiny.en.bin");
                      OutputStream os = new FileOutputStream(out)) {
                     byte[] buf = new byte[1 << 16];
                     int n;

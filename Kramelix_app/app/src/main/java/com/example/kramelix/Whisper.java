@@ -7,10 +7,10 @@ package com.example.kramelix;
 public final class Whisper {
 
     // Loading our native shared library exactly once when the class is first referenced
-    static { System.loadLibrary("whisper_jni"); } // throws UnsatisfiedLinkError is .so is missing
+    static { System.loadLibrary("whisper_jni"); } // throws UnsatisfiedLinkError if .so is missing
 
     // -------------------- Native methods implemented in whisper_jni.cpp --------------------
-    // AMY'S NOTE: Don't rename these functions without updating the C++ JNI symbol names.
+    // AMY'S NOTE: Don't rename these functions without updating the C++ JNI symbol names!!!
     /**
      * Loads the model into native memory.
      * @param modelPath a string pointing to the model file
