@@ -71,6 +71,10 @@ chaquopy {
         // Either point to a real Python 3.13 exe, or remove this to use Chaquopy's build env.
         // On Windows, forward slashes or double-escaped backslashes work.
         buildPython "C:/Users/you/AppData/Local/Programs/Python/Python313/python.exe"
+
+        pip{
+            install("python-dotenv")
+        }
     }
     productFlavors {
         py313 {
