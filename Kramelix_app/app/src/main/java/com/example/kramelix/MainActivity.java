@@ -45,10 +45,12 @@ public class MainActivity extends AppCompatActivity {
     private TextView recordText;
 
     private MediaPlayer mediaPlayer;
-    private PcmRecorder pcmRecorder = new PcmRecorder();
+    private final PcmRecorder pcmRecorder = new PcmRecorder();
 
     private File wavPath;              // recording.wav in app's music dir
     private File modelFile;            // copied from assets/models/ggml-base.en.bin
+
+    private TextView transcriptionText;
 
     private boolean recordPendingAfterPermission = false; // if user tapped record before granting permission
 
@@ -58,17 +60,30 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Prepare output paths
+        // PROCESS: preparing output paths
         wavPath = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "recording.wav");
 
-        // Copy model once from assets → files, then init JNI
-        modelFile = ensureModelCopiedOnce("ggml-tiny.en.bin");
-        if (modelFile == null) {
+        // AMY'S NOTE: we're currently shipping the model in app assets (read-only), which means that
+        // on our first run, we first COPY it to app-internal storage (/data/.../files/models) bc:
+        // (1) our native code needs a filesystem path (and assets aren't considered regular files apparently...) &
+        // (2) assets are compressed; Whisper wants a REAL file path that it can map/read quickly.
+        // Then, we initialize the native model once, and reuse that context for all transcriptions.
+
+        // Copying model once from assets to files, then initializing JNI
+        modelFile = ensureModelCopiedOnce();
+
+        if (modelFile == null) { // error-handling
+            // TODO: consider updating this error toast to a log msg instead
+            // TODO: display a better msg for the user
+            // OUTPUT:
             Toast.makeText(this, "Model copy failed", Toast.LENGTH_LONG).show();
         } else {
-            boolean ok = Whisper.initModel(modelFile.getAbsolutePath());
-            Log.i(TAG, "Whisper.initModel = " + ok);
-            if (!ok) Toast.makeText(this, "Whisper init failed", Toast.LENGTH_LONG).show();
+            // FIXME OPTIMIZE: might have to move this to the background thread if we ever switch to a bigger model in the future bc the ops. are heavy
+            boolean success = Whisper.initModel(modelFile.getAbsolutePath());
+            Log.i(TAG, "Whisper.initModel = " + success);
+
+            // TODO: consider updating this error toast to a log msg instead
+            if (!success) Toast.makeText(this, "Whisper init failed", Toast.LENGTH_LONG).show();
         }
 
         // Bind UI
@@ -76,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
         playRecButton = findViewById(R.id.playRecButton);
         transcribeButton = findViewById(R.id.transcribeButton);
         recordText = findViewById(R.id.recordText);
+        transcriptionText = findViewById(R.id.transcriptionOutput);
 
         // RECORD toggle
         recordButton.setOnClickListener(v -> {
@@ -104,8 +120,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // TRANSCRIBE click
-        transcribeButton.setOnClickListener(v -> doTranscribe());
+        // TRANSCRIBE button click
+        transcribeButton.setOnClickListener(v -> doTranscribe()); // running in a background thread inside doTranscribe()
     }
 
     // -------------------- Recording --------------------
@@ -128,6 +144,8 @@ public class MainActivity extends AppCompatActivity {
             long size = wavPath.length();
             Toast.makeText(this, "Saved: " + size + " bytes\n" + wavPath.getAbsolutePath(), Toast.LENGTH_SHORT).show();
             Log.i(TAG, "WAV saved, size=" + size + " path=" + wavPath);
+            //give the user transcription instructions
+            transcriptionText.setText("New audio recorded. Please press the \"Transcribe\" button to see the transcription");
             recordButton.setChecked(false);
         } catch (Exception e) {
             Log.e(TAG, "stopRecording failed", e);
@@ -175,28 +193,46 @@ public class MainActivity extends AppCompatActivity {
 
     // -------------------- Transcription --------------------
 
+    /**
+     * This helper function transcribes a WAV file and updates the UI accordingly.
+     */
     private void doTranscribe() {
+
+        // PROCESS: checking for loaded model
         if (modelFile == null || !modelFile.exists()) {
+            // TODO: consider updating this error toast to a log msg instead
             Toast.makeText(this, "Model missing", Toast.LENGTH_SHORT).show();
             return;
         }
-        if (!wavPath.exists() || wavPath.length() < 2000) {
+
+        if (!wavPath.exists() || wavPath.length() < 2000) { // audio too short; treating as empty
+            // TODO: display a better msg for the user
             Toast.makeText(this, "No/short recording", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // PROCESS: setting UI state to lock buttons while transcription in progress
         transcribeButton.setEnabled(false);
         transcribeButton.setText("Transcribing...");
 
+        // PROCESS: creating background thread for native calls to avoid blocking main UI thread
         new Thread(() -> {
+
+            // VARIABLE DECLARATION: JNI call
             String text = Whisper.transcribeWav(wavPath.getAbsolutePath());
             Log.i(TAG, "TRANSCRIPT: " + text);
+
+            // PROCESS: switching back to main thread to update UI
             runOnUiThread(() -> {
                 transcribeButton.setEnabled(true);
                 transcribeButton.setText("Transcribe");
-                Toast.makeText(this, text, Toast.LENGTH_LONG).show();
+
+                // TODO: if the native returns a bracketed error, we currently just.. show it as-is,
+                //  so we should consider updating them for better display to the user (or maybe re-try the logic?)
+                transcriptionText.setText(text);
             });
         }, "whisper-transcribe").start();
+
     }
 
     // -------------------- Permissions --------------------
@@ -225,13 +261,13 @@ public class MainActivity extends AppCompatActivity {
     // -------------------- Asset copy --------------------
 
     /** Copy assets/models/<filename> to files/models/<filename> once, return the out File. */
-    private File ensureModelCopiedOnce(String filename) {
+    private File ensureModelCopiedOnce() {
         try {
             File outDir = new File(getFilesDir(), "models");
             if (!outDir.exists()) outDir.mkdirs();
-            File out = new File(outDir, filename);
+            File out = new File(outDir, "ggml-tiny.en.bin");
             if (!out.exists()) {
-                try (InputStream in = getAssets().open("models/" + filename);
+                try (InputStream in = getAssets().open("models/" + "ggml-tiny.en.bin");
                      OutputStream os = new FileOutputStream(out)) {
                     byte[] buf = new byte[1 << 16];
                     int n;
