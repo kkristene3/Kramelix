@@ -28,6 +28,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 
+import com.chaquo.python.Python;
+import com.chaquo.python.PyObject;
+import com.chaquo.python.android.AndroidPlatform;
+
 /**
  * Minimal demo:
  * - Record (AudioRecord -> PCM -> WAV, uses device's ACTUAL sample rate)
@@ -145,12 +149,13 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Saved: " + size + " bytes\n" + wavPath.getAbsolutePath(), Toast.LENGTH_SHORT).show();
             Log.i(TAG, "WAV saved, size=" + size + " path=" + wavPath);
             //give the user transcription instructions
-            transcriptionText.setText("New audio recorded. Please press the \"Transcribe\" button to see the transcription");
+            transcriptionText.setText("Transcribing...");
             recordButton.setChecked(false);
         } catch (Exception e) {
             Log.e(TAG, "stopRecording failed", e);
             Toast.makeText(this, "Stop failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+        doTranscribe();
     }
 
     // -------------------- Playback --------------------
@@ -230,9 +235,27 @@ public class MainActivity extends AppCompatActivity {
                 // TODO: if the native returns a bracketed error, we currently just.. show it as-is,
                 //  so we should consider updating them for better display to the user (or maybe re-try the logic?)
                 transcriptionText.setText(text);
+
+                getResponse(text);
             });
         }, "whisper-transcribe").start();
+    }
 
+    // -------------------- Calling LLM ---------------------
+    private String getResponse(String prompt){
+
+        if (! Python.isStarted()) {
+            Python.start(new AndroidPlatform(this));
+        }
+
+        Python py = Python.getInstance();
+        PyObject mod = py.getModule("whisper");
+
+        String apiKey = BuildConfig.OPENAI_API_KEY;
+
+        PyObject response = mod.callAttr("chat", apiKey, prompt);
+
+        return response.toString();
     }
 
     // -------------------- Permissions --------------------
