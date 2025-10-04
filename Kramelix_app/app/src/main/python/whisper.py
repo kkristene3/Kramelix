@@ -15,7 +15,9 @@ def chat(api_key, prompt):
 
     payload = {
         "model": "gpt-4.1-mini",
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": [
+            {"role": "system", "content": "You only respond in 4 word poems"},
+            {"role": "user", "content": prompt}],
         "max_tokens": 7,
         "temperature": 0.7
     }
