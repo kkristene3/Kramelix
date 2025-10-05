@@ -28,6 +28,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 
+import com.chaquo.python.Python;
+import com.chaquo.python.PyObject;
+import com.chaquo.python.android.AndroidPlatform;
+
 /**
  * Minimal demo:
  * - Record (AudioRecord -> PCM -> WAV, uses device's ACTUAL sample rate)
@@ -41,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
 
     private ToggleButton recordButton;
     private ToggleButton playRecButton;
-    private Button transcribeButton;
     private TextView recordText;
 
     private MediaPlayer mediaPlayer;
@@ -51,6 +54,9 @@ public class MainActivity extends AppCompatActivity {
     private File modelFile;            // copied from assets/models/ggml-base.en.bin
 
     private TextView transcriptionText;
+    private TextView llmResponse;
+
+    private String response;
 
     private boolean recordPendingAfterPermission = false; // if user tapped record before granting permission
 
@@ -89,9 +95,9 @@ public class MainActivity extends AppCompatActivity {
         // Bind UI
         recordButton = findViewById(R.id.recordButton);
         playRecButton = findViewById(R.id.playRecButton);
-        transcribeButton = findViewById(R.id.transcribeButton);
         recordText = findViewById(R.id.recordText);
         transcriptionText = findViewById(R.id.transcriptionOutput);
+        llmResponse = findViewById(R.id.llmResponse);
 
         // RECORD toggle
         recordButton.setOnClickListener(v -> {
@@ -120,8 +126,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // TRANSCRIBE button click
-        transcribeButton.setOnClickListener(v -> doTranscribe()); // running in a background thread inside doTranscribe()
     }
 
     // -------------------- Recording --------------------
@@ -145,12 +149,13 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Saved: " + size + " bytes\n" + wavPath.getAbsolutePath(), Toast.LENGTH_SHORT).show();
             Log.i(TAG, "WAV saved, size=" + size + " path=" + wavPath);
             //give the user transcription instructions
-            transcriptionText.setText("New audio recorded. Please press the \"Transcribe\" button to see the transcription");
+            transcriptionText.setText("Transcribing...");
             recordButton.setChecked(false);
         } catch (Exception e) {
             Log.e(TAG, "stopRecording failed", e);
             Toast.makeText(this, "Stop failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
+        doTranscribe();
     }
 
     // -------------------- Playback --------------------
@@ -211,10 +216,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // PROCESS: setting UI state to lock buttons while transcription in progress
-        transcribeButton.setEnabled(false);
-        transcribeButton.setText("Transcribing...");
-
         // PROCESS: creating background thread for native calls to avoid blocking main UI thread
         new Thread(() -> {
 
@@ -224,15 +225,45 @@ public class MainActivity extends AppCompatActivity {
 
             // PROCESS: switching back to main thread to update UI
             runOnUiThread(() -> {
-                transcribeButton.setEnabled(true);
-                transcribeButton.setText("Transcribe");
 
                 // TODO: if the native returns a bracketed error, we currently just.. show it as-is,
                 //  so we should consider updating them for better display to the user (or maybe re-try the logic?)
                 transcriptionText.setText(text);
+
+                // Call LLM in background so we don't block the UI thread
+                new Thread(() -> {
+
+                    response = getResponse(text); // get LLM response
+
+                    // PROCESS: switch to main thread to update UI
+                    runOnUiThread(() -> {
+                        llmResponse.setVisibility(TextView.VISIBLE);
+
+                        // show LLM response in TextView
+                        if (response == null) response = "[no response given]";
+                        llmResponse.setText(response);
+
+                    });
+                }, "llm-response").start();
             });
         }, "whisper-transcribe").start();
+    }
 
+    // -------------------- Calling LLM ---------------------
+    private String getResponse(String prompt){
+
+        if (! Python.isStarted()) {
+            Python.start(new AndroidPlatform(this));
+        }
+
+        Python py = Python.getInstance();
+        PyObject mod = py.getModule("whisper");
+
+        String apiKey = BuildConfig.OPENAI_API_KEY;
+
+        PyObject response = mod.callAttr("chat", apiKey, prompt);
+
+        return response.toString();
     }
 
     // -------------------- Permissions --------------------
