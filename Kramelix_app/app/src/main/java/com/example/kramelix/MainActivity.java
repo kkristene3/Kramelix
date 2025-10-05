@@ -45,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
 
     private ToggleButton recordButton;
     private ToggleButton playRecButton;
-    private Button transcribeButton;
     private TextView recordText;
 
     private MediaPlayer mediaPlayer;
@@ -93,7 +92,6 @@ public class MainActivity extends AppCompatActivity {
         // Bind UI
         recordButton = findViewById(R.id.recordButton);
         playRecButton = findViewById(R.id.playRecButton);
-        transcribeButton = findViewById(R.id.transcribeButton);
         recordText = findViewById(R.id.recordText);
         transcriptionText = findViewById(R.id.transcriptionOutput);
 
@@ -124,8 +122,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // TRANSCRIBE button click
-        transcribeButton.setOnClickListener(v -> doTranscribe()); // running in a background thread inside doTranscribe()
     }
 
     // -------------------- Recording --------------------
@@ -216,10 +212,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // PROCESS: setting UI state to lock buttons while transcription in progress
-        transcribeButton.setEnabled(false);
-        transcribeButton.setText("Transcribing...");
-
         // PROCESS: creating background thread for native calls to avoid blocking main UI thread
         new Thread(() -> {
 
@@ -229,8 +221,6 @@ public class MainActivity extends AppCompatActivity {
 
             // PROCESS: switching back to main thread to update UI
             runOnUiThread(() -> {
-                transcribeButton.setEnabled(true);
-                transcribeButton.setText("Transcribe");
 
                 // TODO: if the native returns a bracketed error, we currently just.. show it as-is,
                 //  so we should consider updating them for better display to the user (or maybe re-try the logic?)

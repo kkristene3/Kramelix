@@ -26,7 +26,7 @@ def chat(api_key, prompt):
         response = httpx.post(openAI_URL, headers=headers, json=payload, timeout=60)
         response.raise_for_status()
         data = response.json()
-        print(data["choices"][0]["message"]["content"])
+        print("AI response:", data["choices"][0]["message"]["content"])
         return data["choices"][0]["message"]["content"]
     except Exception as e:
         print(f"Error: {e}")
