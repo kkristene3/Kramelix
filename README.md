@@ -45,6 +45,7 @@ To record audio through Android Studio emulator devices, ensure that the followi
 -   In the emulator, open the Settings App and search Microphone. Select Microphone - Permission Manager
 -   Under the "Allowed only while in use" section, select the app _Kramelix_
 -   Select the option "Allow only while using the app"
+  
     ![microphone_permission](/docs/imgs/microphone_permissions.png)
 
 ### Add API key
