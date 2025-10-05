@@ -54,6 +54,9 @@ public class MainActivity extends AppCompatActivity {
     private File modelFile;            // copied from assets/models/ggml-base.en.bin
 
     private TextView transcriptionText;
+    private TextView llmResponse;
+
+    private String response;
 
     private boolean recordPendingAfterPermission = false; // if user tapped record before granting permission
 
@@ -94,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
         playRecButton = findViewById(R.id.playRecButton);
         recordText = findViewById(R.id.recordText);
         transcriptionText = findViewById(R.id.transcriptionOutput);
+        llmResponse = findViewById(R.id.llmResponse);
 
         // RECORD toggle
         recordButton.setOnClickListener(v -> {
@@ -226,7 +230,21 @@ public class MainActivity extends AppCompatActivity {
                 //  so we should consider updating them for better display to the user (or maybe re-try the logic?)
                 transcriptionText.setText(text);
 
-                getResponse(text);
+                // Call LLM in background so we don't block the UI thread
+                new Thread(() -> {
+
+                    response = getResponse(text); // get LLM response
+
+                    // PROCESS: switch to main thread to update UI
+                    runOnUiThread(() -> {
+                        llmResponse.setVisibility(TextView.VISIBLE);
+
+                        // show LLM response in TextView
+                        if (response == null) response = "[no response given]";
+                        llmResponse.setText(response);
+
+                    });
+                }, "llm-response").start();
             });
         }, "whisper-transcribe").start();
     }
