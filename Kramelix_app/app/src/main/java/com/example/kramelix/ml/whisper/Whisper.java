@@ -1,4 +1,4 @@
-package com.example.kramelix;
+package com.example.kramelix.ml.whisper;
 
 /**
  * This class acts as a thin Java wrapper over our native Whisper JNI bridge.

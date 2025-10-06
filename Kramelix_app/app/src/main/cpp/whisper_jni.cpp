@@ -232,7 +232,7 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
  * Apparently, their names MUST match our Java pkg/class/method exactly,
  * so even tho it's ugly, we end up with smth like:
  *
- * package com.example.kramelix;
+ * package com.example.kramelix.ml.whisper;
  * public class Whisper {
  *  static { System.loadLibrary("whisper_jni"); }
  *  public static native boolean initModel(String modelPath);
@@ -240,8 +240,8 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
  * }
  * in Java, becoming
  *
- * Java_com_example_kramelix_Whisper_initModel &
- * Java_com_example_kramelix_Whisper_transcribeWav
+ * Java_com_example_kramelix_ml_whisper_Whisper_initModel &
+ * Java_com_example_kramelix_ml_whisper_Whisper_transcribeWav
  * in C++
  */
 
@@ -254,7 +254,7 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
  * @return JNI_TRUE on success (model loaded); JNI_FALSE on failure (bad path/corrupt file/low memory)
  */
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_example_kramelix_Whisper_initModel(JNIEnv* env, jclass, jstring jModelPath) {
+Java_com_example_kramelix_ml_whisper_Whisper_initModel(JNIEnv* env, jclass, jstring jModelPath) {
 
     // VARIABLE DECLARATION: converting Java model path to C string
     const char* modelPath = env->GetStringUTFChars(jModelPath, nullptr);
@@ -294,7 +294,7 @@ Java_com_example_kramelix_Whisper_initModel(JNIEnv* env, jclass, jstring jModelP
  * @return a new Java String with the transcript text on success; a bracketed error message on failure
  */
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_example_kramelix_Whisper_transcribeWav(JNIEnv* env, jclass, jstring jWavPath) {
+Java_com_example_kramelix_ml_whisper_Whisper_transcribeWav(JNIEnv* env, jclass, jstring jWavPath) {
 
     // PROCESS: checking that model's been initialized
     if (!g_ctx) {

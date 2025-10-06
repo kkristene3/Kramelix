@@ -13,6 +13,7 @@ def chat(api_key, prompt):
         "Content-Type": "application/json"
     }
 
+    # TODO: update the payload data when we need to
     payload = {
         "model": "gpt-4.1-mini",
         "messages": [

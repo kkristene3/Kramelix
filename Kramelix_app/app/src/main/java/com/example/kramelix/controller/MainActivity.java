@@ -1,4 +1,4 @@
-package com.example.kramelix;
+package com.example.kramelix.controller;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -11,7 +11,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -31,6 +30,10 @@ import java.nio.file.Files;
 import com.chaquo.python.Python;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.android.AndroidPlatform;
+import com.example.kramelix.R;
+import com.example.kramelix.ml.whisper.Whisper;
+import com.example.kramelix.BuildConfig;
+
 
 /**
  * Minimal demo:
@@ -240,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
                         llmResponse.setVisibility(TextView.VISIBLE);
 
                         // show LLM response in TextView
-                        if (response == null) response = "[no response given]";
+                        if (response == null || response.isBlank()) response = "[no response given]";
                         llmResponse.setText(response);
 
                     });
