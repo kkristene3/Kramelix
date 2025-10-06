@@ -39,13 +39,6 @@ import com.example.kramelix.model.ConversationRepository;
 import com.example.kramelix.model.Message;
 import com.example.kramelix.view.ChatAdapter;
 
-
-/**
- * Minimal demo:
- * - Record (AudioRecord -> PCM -> WAV, uses device's ACTUAL sample rate)
- * - Play (MediaPlayer)
- * - Transcribe (Whisper JNI) with resampling in native code
- */
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
@@ -75,19 +68,20 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // ===== Bind UI FIRST =====
+        // Binding UI first
         recordButton = findViewById(R.id.recordButton);
         playRecButton = findViewById(R.id.playRecButton);
         recordText   = findViewById(R.id.recordText);
         chatRecycler = findViewById(R.id.chatRecycler);
 
-        // ===== Chat list wiring =====
+        // Wiring chat list for view of conversation history
         chatAdapter = new ChatAdapter();
         LinearLayoutManager lm = new LinearLayoutManager(this);
         lm.setStackFromEnd(true); // newest messages at bottom
         chatRecycler.setLayoutManager(lm);
         chatRecycler.setAdapter(chatAdapter);
 
+        // Setting up conversation repo
         convoRepo = ConversationRepository.get();
         convoRepo.getMessages().observe(this, msgs -> {
             chatAdapter.submit(msgs);
@@ -107,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         modelFile = ensureModelCopiedOnce();
 
         if (modelFile == null) { // error-handling
-            // TODO: consider updating this error toast to a log msg instead
+            // FIXME OPTIMIZE: consider updating this error toast to a log msg instead
             // TODO: display a better msg for the user
             // OUTPUT:
             Toast.makeText(this, "Model copy failed", Toast.LENGTH_LONG).show();
@@ -237,40 +231,49 @@ public class MainActivity extends AppCompatActivity {
 
         // PROCESS: creating background thread for native calls to avoid blocking main UI thread
         new Thread(() -> {
+
             try {
-                // UX: add USER pending bubble (pulses + dots)
+
+                // UX: adding USER pending bubble (pulses + dots)
                 Message userPending = convoRepo.addPendingMessage(Message.Role.USER, "…");
 
-                // VARIABLE DECLARATION: JNI call
-                //  We call the Whisper JNI on a worker thread to avoid janking the UI.
+                // VARIABLE DECLARATION: JNI call on worker thread to avoid janking UI
                 String text = Whisper.transcribeWav(wavPath.getAbsolutePath());
                 Log.i(TAG, "TRANSCRIPT: " + text);
 
-                // Replace USER pending bubble with real transcript
+                // PROCESS: updating the USER pending bubble w/ the real transcript
                 String safeUserText = (text == null || text.isBlank()) ? "[empty transcript]" : text;
                 convoRepo.updateMessage(userPending.getId(), safeUserText, false);
 
-                // UX: add ASSISTANT pending bubble (pulses + dots)
+                // UX: adding ASSISTANT pending bubble (pulses + dots)
                 Message assistantPending = convoRepo.addPendingMessage(Message.Role.ASSISTANT, "…");
 
-                // Get LLM response off main thread
+                // PROCESS: retrieving the LLM response off main thread
                 String llm;
+
                 try {
                     llm = getResponse(safeUserText);
-                } catch (Exception e) {
+                } catch (Exception e) { // error-handling
+                    // TODO: display a better error msg for the user
                     Log.e(TAG, "LLM call failed", e);
                     llm = "[llm error: " + e.getClass().getSimpleName() + "]";
                 }
+
                 String safeResp = (llm == null || llm.isBlank()) ? "[no response given]" : llm;
 
-                // Replace ASSISTANT pending with final response
+                // PROCESS: updating ASSISTANT pending bubble w/ the final response
                 convoRepo.updateMessage(assistantPending.getId(), safeResp, false);
 
-            } catch (Exception e) {
+            } catch (Exception e) { // error-handling
+
+                // TODO: display a better error msg for the user & consider running again
                 Log.e(TAG, "Transcription pipeline failed", e);
                 runOnUiThread(() -> Toast.makeText(this, "Transcription failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+
             }
+
         }, "whisper-transcribe").start();
+
     }
 
     // -------------------- Calling LLM ---------------------
