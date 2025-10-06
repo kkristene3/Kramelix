@@ -19,6 +19,8 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -33,6 +35,9 @@ import com.chaquo.python.android.AndroidPlatform;
 import com.example.kramelix.R;
 import com.example.kramelix.ml.whisper.Whisper;
 import com.example.kramelix.BuildConfig;
+import com.example.kramelix.model.ConversationRepository;
+import com.example.kramelix.model.Message;
+import com.example.kramelix.view.ChatAdapter;
 
 
 /**
@@ -53,21 +58,41 @@ public class MainActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private final PcmRecorder pcmRecorder = new PcmRecorder();
 
-    private File wavPath;              // recording.wav in app's music dir
-    private File modelFile;            // copied from assets/models/ggml-base.en.bin
-
-    private TextView transcriptionText;
-    private TextView llmResponse;
+    private File wavPath; // recording.wav in app's music dir
+    private File modelFile; // copied from assets/models/ggml-base.en.bin
 
     private String response;
+    private boolean recordPendingAfterPermission = false;
 
-    private boolean recordPendingAfterPermission = false; // if user tapped record before granting permission
+    // Chat UI
+    private RecyclerView chatRecycler;
+    private ChatAdapter chatAdapter;
+    private ConversationRepository convoRepo; // in-memory per-session log
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        // ===== Bind UI FIRST =====
+        recordButton = findViewById(R.id.recordButton);
+        playRecButton = findViewById(R.id.playRecButton);
+        recordText   = findViewById(R.id.recordText);
+        chatRecycler = findViewById(R.id.chatRecycler);
+
+        // ===== Chat list wiring =====
+        chatAdapter = new ChatAdapter();
+        LinearLayoutManager lm = new LinearLayoutManager(this);
+        lm.setStackFromEnd(true); // newest messages at bottom
+        chatRecycler.setLayoutManager(lm);
+        chatRecycler.setAdapter(chatAdapter);
+
+        convoRepo = ConversationRepository.get();
+        convoRepo.getMessages().observe(this, msgs -> {
+            chatAdapter.submit(msgs);
+            chatRecycler.scrollToPosition(Math.max(0, chatAdapter.getItemCount() - 1));
+        });
 
         // PROCESS: preparing output paths
         wavPath = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "recording.wav");
@@ -94,13 +119,6 @@ public class MainActivity extends AppCompatActivity {
             // TODO: consider updating this error toast to a log msg instead
             if (!success) Toast.makeText(this, "Whisper init failed", Toast.LENGTH_LONG).show();
         }
-
-        // Bind UI
-        recordButton = findViewById(R.id.recordButton);
-        playRecButton = findViewById(R.id.playRecButton);
-        recordText = findViewById(R.id.recordText);
-        transcriptionText = findViewById(R.id.transcriptionOutput);
-        llmResponse = findViewById(R.id.llmResponse);
 
         // RECORD toggle
         recordButton.setOnClickListener(v -> {
@@ -151,8 +169,6 @@ public class MainActivity extends AppCompatActivity {
             long size = wavPath.length();
             Toast.makeText(this, "Saved: " + size + " bytes\n" + wavPath.getAbsolutePath(), Toast.LENGTH_SHORT).show();
             Log.i(TAG, "WAV saved, size=" + size + " path=" + wavPath);
-            //give the user transcription instructions
-            transcriptionText.setText("Transcribing...");
             recordButton.setChecked(false);
         } catch (Exception e) {
             Log.e(TAG, "stopRecording failed", e);
@@ -221,34 +237,39 @@ public class MainActivity extends AppCompatActivity {
 
         // PROCESS: creating background thread for native calls to avoid blocking main UI thread
         new Thread(() -> {
+            try {
+                // UX: add USER pending bubble (pulses + dots)
+                Message userPending = convoRepo.addPendingMessage(Message.Role.USER, "…");
 
-            // VARIABLE DECLARATION: JNI call
-            String text = Whisper.transcribeWav(wavPath.getAbsolutePath());
-            Log.i(TAG, "TRANSCRIPT: " + text);
+                // VARIABLE DECLARATION: JNI call
+                //  We call the Whisper JNI on a worker thread to avoid janking the UI.
+                String text = Whisper.transcribeWav(wavPath.getAbsolutePath());
+                Log.i(TAG, "TRANSCRIPT: " + text);
 
-            // PROCESS: switching back to main thread to update UI
-            runOnUiThread(() -> {
+                // Replace USER pending bubble with real transcript
+                String safeUserText = (text == null || text.isBlank()) ? "[empty transcript]" : text;
+                convoRepo.updateMessage(userPending.getId(), safeUserText, false);
 
-                // TODO: if the native returns a bracketed error, we currently just.. show it as-is,
-                //  so we should consider updating them for better display to the user (or maybe re-try the logic?)
-                transcriptionText.setText(text);
+                // UX: add ASSISTANT pending bubble (pulses + dots)
+                Message assistantPending = convoRepo.addPendingMessage(Message.Role.ASSISTANT, "…");
 
-                // Call LLM in background so we don't block the UI thread
-                new Thread(() -> {
+                // Get LLM response off main thread
+                String llm;
+                try {
+                    llm = getResponse(safeUserText);
+                } catch (Exception e) {
+                    Log.e(TAG, "LLM call failed", e);
+                    llm = "[llm error: " + e.getClass().getSimpleName() + "]";
+                }
+                String safeResp = (llm == null || llm.isBlank()) ? "[no response given]" : llm;
 
-                    response = getResponse(text); // get LLM response
+                // Replace ASSISTANT pending with final response
+                convoRepo.updateMessage(assistantPending.getId(), safeResp, false);
 
-                    // PROCESS: switch to main thread to update UI
-                    runOnUiThread(() -> {
-                        llmResponse.setVisibility(TextView.VISIBLE);
-
-                        // show LLM response in TextView
-                        if (response == null || response.isBlank()) response = "[no response given]";
-                        llmResponse.setText(response);
-
-                    });
-                }, "llm-response").start();
-            });
+            } catch (Exception e) {
+                Log.e(TAG, "Transcription pipeline failed", e);
+                runOnUiThread(() -> Toast.makeText(this, "Transcription failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
         }, "whisper-transcribe").start();
     }
 
@@ -264,13 +285,11 @@ public class MainActivity extends AppCompatActivity {
 
         String apiKey = BuildConfig.OPENAI_API_KEY;
 
-        PyObject response = mod.callAttr("chat", apiKey, prompt);
-
-        return response.toString();
+        PyObject response = mod.callAttr("chat", apiKey, prompt == null ? "" : prompt);
+        return response != null ? response.toString() : null;
     }
 
     // -------------------- Permissions --------------------
-
     private boolean hasRecordPermission() {
         return ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 == PackageManager.PERMISSION_GRANTED;
@@ -301,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
             if (!outDir.exists()) outDir.mkdirs();
             File out = new File(outDir, "ggml-tiny.en.bin");
             if (!out.exists()) {
-                try (InputStream in = getAssets().open("models/" + "ggml-tiny.en.bin");
+                try (InputStream in = getAssets().open("models/ggml-tiny.en.bin");
                      OutputStream os = new FileOutputStream(out)) {
                     byte[] buf = new byte[1 << 16];
                     int n;
