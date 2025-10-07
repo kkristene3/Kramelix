@@ -3,10 +3,7 @@ package com.example.kramelix.controller;
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
-
-import java.util.LinkedList;
 import java.util.Locale;
-import java.util.Queue;
 
 /**
  * This class will handle Text-to-Speech for the LLM
@@ -16,11 +13,10 @@ public class TTSController implements TextToSpeech.OnInitListener{
 
     private final TextToSpeech textToSpeech;
 
-    private final Queue<String> pending = new LinkedList<>();
-
     public TTSController(Context context) {
         textToSpeech = new TextToSpeech(context.getApplicationContext(), this);
     }
+
     @Override
     public void onInit(int status) {
 
@@ -32,6 +28,10 @@ public class TTSController implements TextToSpeech.OnInitListener{
         }
     }
 
+    /**
+     * Convert text to speech
+     * @param text - llm's response
+     */
     public void speak(String text) {
         if (text == null || text.isEmpty()) return;
         try{

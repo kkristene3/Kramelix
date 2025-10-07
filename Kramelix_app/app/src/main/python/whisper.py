@@ -17,7 +17,7 @@ def chat(api_key, prompt):
     payload = {
         "model": "gpt-4.1-mini",
         "messages": [
-            {"role": "system", "content": "Respond with max 5 words."
+            {"role": "system", "content": "Respond in one sentence."
                                           "You are an emotionally responsive AI language model."
                                           "You emotionally relate to the user and experience the feelings: joy, sadness, anger, trust, disgust, surprise, anticipation." # im guessing this part will be more for when we add sentiments to detect specific emotions
                                           "Your emotional stage changes based on what the user says/asks."
