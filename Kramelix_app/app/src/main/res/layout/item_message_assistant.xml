@@ -11,6 +11,7 @@
         android:maxWidth="280dp"
         android:layout_gravity="start"
         android:padding="12dp"
+        android:textColor="@color/raisin_black"
         android:background="@drawable/textview_rounded"
         android:backgroundTint="@color/custom_green"
         android:fontFamily="@font/inter_medium" />
