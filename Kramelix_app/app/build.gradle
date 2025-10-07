@@ -1,10 +1,14 @@
 plugins {
     alias(libs.plugins.android.application)
-    id("com.chaquo.python")
+    id 'com.chaquo.python'
 }
+
+def props = new Properties();
+props.load(new FileInputStream(rootProject.file("local.properties")))
 
 android {
     namespace 'com.example.kramelix'
+    // Use an SDK you have installed (36 is fine if you installed it; otherwise use 34/35)
     compileSdk 36
 
     defaultConfig {
@@ -16,17 +20,45 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
+        buildConfigField "String", "OPENAI_API_KEY", "\"${props['OPENAI_API_KEY']}\""
+
         ndk {
-            // On Apple silicon, you can omit x86_64.
+            // For emulator + device. If you only run on a phone, you can keep just "arm64-v8a".
             abiFilters "arm64-v8a", "x86_64"
         }
 
-
-        flavorDimensions "pyVersion"
-        productFlavors {
-            create("py313") { dimension = "pyVersion" }
+        externalNativeBuild {
+            cmake {
+                // C++ compiler flags
+                cppFlags "-O3 -fvisibility=hidden -fexceptions -frtti"
+            }
         }
 
+        buildFeatures{
+            buildConfig = true
+        }
+
+        // (Optional) flavors for Chaquopy
+        flavorDimensions "pyVersion"
+        productFlavors {
+            py313 {
+                dimension "pyVersion"
+            }
+        }
+    }
+
+    // Pin versions you actually have installed in SDK Manager
+    ndkVersion "29.0.14033849"
+
+    buildFeatures {
+        prefab false
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file("src/main/cpp/CMakeLists.txt")
+            version "3.22.1"
+        }
     }
 
     buildTypes {
@@ -35,6 +67,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
@@ -44,25 +77,38 @@ android {
 chaquopy {
     defaultConfig {
         version = "3.13"
-        buildPython("C:/path/to/python.exe")
+        // Either point to a real Python 3.13 exe, or remove this to use Chaquopy's build env.
+        // On Windows, forward slashes or double-escaped backslashes work.
+        //Commented out this next line cause "Users/you" isn't a valid path. Either add Python to ur path or add the exact path in your local properties
+        //buildPython "C:/Users/you/AppData/Local/Programs/Python/Python313/python.exe"
+
+        pip{
+            install("python-dotenv")
+
+            //install OpenAI API
+            install("httpx")
+        }
     }
     productFlavors {
-        getByName("py313") { version = "3.13" }
+        py313 {
+            version "3.13"
+        }
     }
     sourceSets {
-        main{
+        main {
             srcDirs = ["src/main/python"]
         }
     }
 }
 
 dependencies {
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.activity)
+    implementation(libs.constraintlayout)
+    py313Implementation files('C:\\Program Files\\Python313\\python.exe')
 
-    implementation libs.appcompat
-    implementation libs.material
-    implementation libs.activity
-    implementation libs.constraintlayout
-    testImplementation libs.junit
-    androidTestImplementation libs.ext.junit
-    androidTestImplementation libs.espresso.core
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
 }

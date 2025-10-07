@@ -4,6 +4,7 @@
     
     <!-- add permissions to record audio -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:allowBackup="true"
@@ -15,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Kramelix">
         <activity
-            android:name=".MainActivity"
+            android:name=".controller.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
