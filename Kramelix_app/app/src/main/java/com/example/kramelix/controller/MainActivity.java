@@ -62,6 +62,9 @@ public class MainActivity extends AppCompatActivity {
     private ChatAdapter chatAdapter;
     private ConversationRepository convoRepo; // in-memory per-session log
 
+    // TTS Controller
+    private TTSController ttsController;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -140,6 +143,9 @@ public class MainActivity extends AppCompatActivity {
                 stopPlayback();
             }
         });
+
+        // TTS Controller
+        ttsController = new TTSController(this);
 
     }
 
@@ -264,6 +270,13 @@ public class MainActivity extends AppCompatActivity {
                 // PROCESS: updating ASSISTANT pending bubble w/ the final response
                 convoRepo.updateMessage(assistantPending.getId(), safeResp, false);
 
+                // PROCESS: provide text-to-speech for the LLM response
+                runOnUiThread(() -> {
+                    if (!"[no response given]".equals(safeResp)) {
+                        ttsController.speak(safeResp);
+                    }
+                });
+
             } catch (Exception e) { // error-handling
 
                 // TODO: display a better error msg for the user & consider running again
@@ -290,6 +303,15 @@ public class MainActivity extends AppCompatActivity {
 
         PyObject response = mod.callAttr("chat", apiKey, prompt == null ? "" : prompt);
         return response != null ? response.toString() : null;
+    }
+
+    // ------------------- Shutdown TTS --------------------
+    @Override
+    protected void onDestroy() {
+        if (ttsController != null) {
+            ttsController.shutdown();
+        }
+        super.onDestroy();
     }
 
     // -------------------- Permissions --------------------

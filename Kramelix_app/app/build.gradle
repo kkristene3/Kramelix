@@ -106,6 +106,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    py313Implementation files('C:\\Program Files\\Python313\\python.exe')
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

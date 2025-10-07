@@ -97,16 +97,17 @@
         android:id="@+id/playRecButton"
         android:layout_width="168dp"
         android:layout_height="45dp"
-        android:layout_marginBottom="32dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="22dp"
         android:background="@drawable/toggle_button_bg"
         android:fontFamily="@font/inter_medium"
         android:text="@string/empty_string"
         android:textColor="@color/raisin_black"
         android:textOff="@string/play_recording"
         android:textOn="@string/stop_playing"
-        app:layout_constraintTop_toBottomOf="@id/recordText"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/recordText" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
