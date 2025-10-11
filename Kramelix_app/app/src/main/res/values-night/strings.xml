@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="kramelix_title"><font color='#FF79C6'>KR</font><font color='#50FA7B'>AM</font><font color='#5194FF'>E</font><font color='#F1FA8C'>L</font><font color='#5194FF'>I</font><font color='#F1FA8C'>X</font></string>
+    <string name="logo_description">The logo of our app.</string>
 </resources>

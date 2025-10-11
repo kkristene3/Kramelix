@@ -3,7 +3,7 @@ plugins {
     id 'com.chaquo.python'
 }
 
-def props = new Properties();
+def props = new Properties()
 props.load(new FileInputStream(rootProject.file("local.properties")))
 
 android {
@@ -106,7 +106,8 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    py313Implementation files('C:\\Program Files\\Python313\\python.exe')
+    //noinspection GradlePath
+    py313Implementation files('C:/Program Files/Python313/python.exe')
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
