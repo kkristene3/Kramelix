@@ -13,6 +13,7 @@ public final class Whisper {
 
     // -------------------- Native methods implemented in whisper_jni.cpp --------------------
     // AMY'S NOTE: Don't rename these functions without updating the C++ JNI symbol names!!!
+
     /**
      * Loads the model into native memory.
      * @param modelPath a string pointing to the model file

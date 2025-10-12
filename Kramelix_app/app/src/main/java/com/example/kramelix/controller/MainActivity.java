@@ -17,12 +17,15 @@ import android.widget.ToggleButton;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +36,7 @@ import com.chaquo.python.Python;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.android.AndroidPlatform;
 import com.example.kramelix.R;
+import com.example.kramelix.model.Role;
 import com.example.kramelix.whisperjni.Whisper;
 import com.example.kramelix.BuildConfig;
 import com.example.kramelix.model.ConversationRepository;
@@ -48,14 +52,14 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton playRecButton;
     private TextView recordText;
 
+    @Nullable
     private MediaPlayer mediaPlayer;
     private final PcmRecorder pcmRecorder = new PcmRecorder();
 
     private File wavPath; // recording.wav in app's music dir
     private File modelFile; // copied from assets/models/ggml-base.en.bin
 
-    private String response;
-    private boolean recordPendingAfterPermission = false;
+    private boolean recordPendingAfterPermission;
 
     // Chat UI
     private RecyclerView chatRecycler;
@@ -66,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     private TTSController ttsController;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
@@ -74,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         // Binding UI first
         recordButton = findViewById(R.id.recordButton);
         playRecButton = findViewById(R.id.playRecButton);
-        recordText   = findViewById(R.id.recordText);
+        recordText = findViewById(R.id.recordText);
         chatRecycler = findViewById(R.id.chatRecycler);
 
         // Wiring chat list for view of conversation history
@@ -103,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
         // Copying model once from assets to files, then initializing JNI
         modelFile = ensureModelCopiedOnce();
 
-        if (modelFile == null) { // error-handling
+        if (null == modelFile) { // error-handling
             // FIXME OPTIMIZE: consider updating this error toast to a log msg instead
             // TODO: display a better msg for the user
             // OUTPUT:
@@ -156,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
             pcmRecorder.start(wavPath);
             Toast.makeText(this, "Recording...", Toast.LENGTH_SHORT).show();
             recordButton.setChecked(true);
-        } catch (Exception e) {
+        } catch (IOException e) {
             Log.e(TAG, "startRecording failed", e);
             recordButton.setChecked(false);
             Toast.makeText(this, "Record failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -181,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startPlayback() {
         try {
-            if (!wavPath.exists() || wavPath.length() < 2000) {
+            if (!wavPath.exists() || 2000 > wavPath.length()) {
                 Toast.makeText(this, "No/short recording. Did you stop recording?", Toast.LENGTH_SHORT).show();
                 playRecButton.setChecked(false);
                 return;
@@ -204,11 +208,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopPlayback() {
         try {
-            if (mediaPlayer != null) {
+            if (null != mediaPlayer) {
                 mediaPlayer.stop();
                 mediaPlayer.release();
             }
-        } catch (Exception ignored) {
+        } catch (IllegalStateException ignored) {
+            // TODO: add error-handling here
         } finally {
             mediaPlayer = null;
         }
@@ -223,13 +228,13 @@ public class MainActivity extends AppCompatActivity {
     private void doTranscribe() {
 
         // PROCESS: checking for loaded model
-        if (modelFile == null || !modelFile.exists()) {
+        if (null == modelFile || !modelFile.exists()) {
             // TODO: consider updating this error toast to a log msg instead
             Toast.makeText(this, "Model missing", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (!wavPath.exists() || wavPath.length() < 2000) { // audio too short; treating as empty
+        if (!wavPath.exists() || 2000L > wavPath.length()) { // audio too short; treating as empty
             // TODO: display a better msg for the user
             Toast.makeText(this, "No/short recording", Toast.LENGTH_SHORT).show();
             return;
@@ -241,31 +246,31 @@ public class MainActivity extends AppCompatActivity {
             try {
 
                 // UX: adding USER pending bubble (pulses + dots)
-                Message userPending = convoRepo.addPendingMessage(Message.Role.USER, "…");
+                Message userPending = convoRepo.addPendingMessage(Role.USER, "…");
 
                 // VARIABLE DECLARATION: JNI call on worker thread to avoid janking UI
                 String text = Whisper.transcribeWav(wavPath.getAbsolutePath());
                 Log.i(TAG, "TRANSCRIPT: " + text);
 
                 // PROCESS: updating the USER pending bubble w/ the real transcript
-                String safeUserText = (text == null || text.isBlank()) ? "[empty transcript]" : text;
+                String safeUserText = (null == text || text.isBlank()) ? "[empty transcript]" : text;
                 convoRepo.updateMessage(userPending.getId(), safeUserText, false);
 
                 // UX: adding ASSISTANT pending bubble (pulses + dots)
-                Message assistantPending = convoRepo.addPendingMessage(Message.Role.ASSISTANT, "…");
+                Message assistantPending = convoRepo.addPendingMessage(Role.ASSISTANT, "…");
 
                 // PROCESS: retrieving the LLM response off main thread
                 String llm;
 
                 try {
                     llm = getResponse(safeUserText);
-                } catch (Exception e) { // error-handling
+                } catch (RuntimeException e) { // error-handling
                     // TODO: display a better error msg for the user
                     Log.e(TAG, "LLM call failed", e);
                     llm = "[llm error: " + e.getClass().getSimpleName() + "]";
                 }
 
-                String safeResp = (llm == null || llm.isBlank()) ? "[no response given]" : llm;
+                String safeResp = (null == llm || llm.isBlank()) ? "[no response given]" : llm;
 
                 // PROCESS: updating ASSISTANT pending bubble w/ the final response
                 convoRepo.updateMessage(assistantPending.getId(), safeResp, false);
@@ -277,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-            } catch (Exception e) { // error-handling
+            } catch (RuntimeException e) { // error-handling
 
                 // TODO: display a better error msg for the user & consider running again
                 Log.e(TAG, "Transcription pipeline failed", e);
@@ -290,9 +295,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // -------------------- Calling LLM ---------------------
-    private String getResponse(String prompt){
+    @Nullable
+    private String getResponse(String prompt) {
 
-        if (! Python.isStarted()) {
+        if (!Python.isStarted()) {
             Python.start(new AndroidPlatform(this));
         }
 
@@ -301,14 +307,14 @@ public class MainActivity extends AppCompatActivity {
 
         String apiKey = BuildConfig.OPENAI_API_KEY;
 
-        PyObject response = mod.callAttr("chat", apiKey, prompt == null ? "" : prompt);
-        return response != null ? response.toString() : null;
+        PyObject response = mod.callAttr("chat", apiKey, null == prompt ? "" : prompt);
+        return null != response ? response.toString() : null;
     }
 
     // ------------------- Shutdown TTS --------------------
     @Override
-    protected void onDestroy() {
-        if (ttsController != null) {
+    protected final void onDestroy() {
+        if (null != ttsController) {
             ttsController.shutdown();
         }
         super.onDestroy();
@@ -316,17 +322,16 @@ public class MainActivity extends AppCompatActivity {
 
     // -------------------- Permissions --------------------
     private boolean hasRecordPermission() {
-        return ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                == PackageManager.PERMISSION_GRANTED;
+        return PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO);
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public final void onRequestPermissionsResult(int requestCode,
+                                                 @NonNull String[] permissions,
+                                                 @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_AUDIO) {
-            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+        if (REQ_AUDIO == requestCode) {
+            boolean granted = 0 < grantResults.length && PackageManager.PERMISSION_GRANTED == grantResults[0];
             if (granted && recordPendingAfterPermission) {
                 recordPendingAfterPermission = false;
                 startRecording();
@@ -339,6 +344,7 @@ public class MainActivity extends AppCompatActivity {
     // -------------------- Asset copy --------------------
 
     /** Copy assets/models/ggml-tiny.en.bin to files/models/ggml-tiny.en.bin once, return the out File. */
+    @Nullable
     private File ensureModelCopiedOnce() {
         try {
             File outDir = new File(getFilesDir(), "models");
@@ -349,32 +355,37 @@ public class MainActivity extends AppCompatActivity {
                      OutputStream os = new FileOutputStream(out)) {
                     byte[] buf = new byte[1 << 16];
                     int n;
-                    while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
+                    while (0 < (n = in.read(buf))) os.write(buf, 0, n);
                 }
             }
             return out;
-        } catch (Exception e) {
+        } catch (FileNotFoundException e) {
             Log.e(TAG, "Model copy failed", e);
+            return null;
+        } catch (IOException e) {
+            Log.e(TAG, "Reading model failed", e);
             return null;
         }
     }
 
     // -------------------- PCM -> WAV recorder (uses ACTUAL device sample rate) --------------------
 
-    private static final class PcmRecorder {
+    static final class PcmRecorder {
         private static final int REQUESTED_SAMPLE_RATE = 16000; // request 16k, device may choose differently
         private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
         private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
+        @Nullable
         private AudioRecord audioRecord;
+        @Nullable
         private Thread thread;
         private volatile boolean running;
-        private long bytesWritten = 0;
+        private long bytesWritten;
         private int actualSampleRate = REQUESTED_SAMPLE_RATE;
 
         /** Start capturing to temp PCM; later wrapped into WAV at stop(). */
         @SuppressLint("MissingPermission")
-        public void start(File wavOut) throws IOException {
+        void start(File wavOut) throws IOException {
             int minBuf = AudioRecord.getMinBufferSize(REQUESTED_SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
             int bufSize = Math.max(minBuf, 4096);
 
@@ -387,7 +398,7 @@ public class MainActivity extends AppCompatActivity {
                     AUDIO_FORMAT,
                     bufSize);
 
-            if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+            if (AudioRecord.STATE_INITIALIZED != audioRecord.getState()) {
                 // Fallback to MIC
                 audioRecord.release();
                 audioRecord = new AudioRecord(
@@ -398,7 +409,7 @@ public class MainActivity extends AppCompatActivity {
                         bufSize);
             }
 
-            if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+            if (AudioRecord.STATE_INITIALIZED != audioRecord.getState()) {
                 throw new IOException("AudioRecord init failed (state=" + audioRecord.getState() + ")");
             }
 
@@ -408,7 +419,7 @@ public class MainActivity extends AppCompatActivity {
 
             File pcm = new File(wavOut.getParentFile(), "tmp_recording.pcm");
             FileOutputStream fos = new FileOutputStream(pcm);
-            bytesWritten = 0;
+            bytesWritten = 0L;
 
             running = true;
             audioRecord.startRecording();
@@ -418,14 +429,14 @@ public class MainActivity extends AppCompatActivity {
                 try (FileOutputStream out = fos) {
                     while (running) {
                         int n = audioRecord.read(buf, 0, buf.length);
-                        if (n > 0) {
+                        if (0 < n) {
                             out.write(buf, 0, n);
                             bytesWritten += n;
                         } else {
                             Log.w("PcmRecorder", "audioRecord.read=" + n);
                         }
                     }
-                } catch (Exception e) {
+                } catch (IOException e) {
                     Log.e("PcmRecorder", "writer error", e);
                 }
             }, "pcm-writer");
@@ -434,14 +445,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         /** Stop capture, join thread, wrap PCM into a WAV with the ACTUAL sample rate. */
-        public void stop(File wavOut) throws IOException, InterruptedException {
+        void stop(File wavOut) throws IOException, InterruptedException {
             running = false;
-            if (audioRecord != null) {
-                try { audioRecord.stop(); } catch (Exception ignore) {}
+            if (null != audioRecord) {
+                try {
+                    audioRecord.stop();
+                } catch (IllegalStateException ignore) {
+                    // TODO: add error-handling here
+                }
                 audioRecord.release();
                 audioRecord = null;
             }
-            if (thread != null) {
+            if (null != thread) {
                 thread.join();
                 thread = null;
             }
@@ -463,13 +478,13 @@ public class MainActivity extends AppCompatActivity {
         private static void writeWavFromPcm16Mono(File pcm, File wav, int sampleRate) throws IOException {
             byte[] pcmBytes = readAll(pcm);
             int dataLen = pcmBytes.length;
-            int byteRate = sampleRate * 2; // mono, 16-bit
+            int byteRate = sampleRate << 1; // mono, 16-bit
             int blockAlign = 2;
 
             try (FileOutputStream out = new FileOutputStream(wav)) {
-                out.write(new byte[]{'R','I','F','F'});
+                out.write(new byte[]{'R', 'I', 'F', 'F'});
                 writeLE32(out, 36 + dataLen);
-                out.write(new byte[]{'W','A','V','E','f','m','t',' '});
+                out.write(new byte[]{'W', 'A', 'V', 'E', 'f', 'm', 't', ' '});
                 writeLE32(out, 16);
                 writeLE16(out, 1);   // PCM
                 writeLE16(out, 1);   // mono
@@ -477,30 +492,35 @@ public class MainActivity extends AppCompatActivity {
                 writeLE32(out, byteRate);
                 writeLE16(out, blockAlign);
                 writeLE16(out, 16);  // bits
-                out.write(new byte[]{'d','a','t','a'});
+                out.write(new byte[]{'d', 'a', 't', 'a'});
                 writeLE32(out, dataLen);
                 out.write(pcmBytes);
             }
         }
 
         private static byte[] readAll(File f) throws IOException {
-            if (Build.VERSION.SDK_INT >= 26) {
+            if (26 <= Build.VERSION.SDK_INT) {
                 return Files.readAllBytes(f.toPath());
             } else {
                 byte[] buf = new byte[(int) f.length()];
                 try (InputStream in = new java.io.FileInputStream(f)) {
                     int off = 0, n;
-                    while ((n = in.read(buf, off, buf.length - off)) > 0) off += n;
+                    while (0 < (n = in.read(buf, off, buf.length - off))) off += n;
                     return buf;
                 }
             }
         }
 
         private static void writeLE16(OutputStream os, int v) throws IOException {
-            os.write(v & 0xff); os.write((v >> 8) & 0xff);
+            os.write(v & 0xff);
+            os.write((v >> 8) & 0xff);
         }
+
         private static void writeLE32(OutputStream os, int v) throws IOException {
-            os.write(v & 0xff); os.write((v >> 8) & 0xff); os.write((v >> 16) & 0xff); os.write((v >> 24) & 0xff);
+            os.write(v & 0xff);
+            os.write((v >> 8) & 0xff);
+            os.write((v >> 16) & 0xff);
+            os.write((v >> 24) & 0xff);
         }
     }
 }

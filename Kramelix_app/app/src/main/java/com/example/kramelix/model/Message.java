@@ -9,11 +9,6 @@ public class Message {
 
     // -------------------- COMPONENTS ---------------------
     /**
-     * The types of chatter roles that can be associated with a message.
-     */
-    public enum Role { USER, ASSISTANT }
-
-    /**
      * The unique ID associated with the message (needed for tracking conversation history).
      */
     private final String id;
@@ -34,6 +29,7 @@ public class Message {
     private boolean pending;
 
     // -------------------- CONSTRUCTORS ---------------------
+
     /**
      * Constructor for a new message.
      *
@@ -41,7 +37,7 @@ public class Message {
      * @param text The text content of the message.
      * @param pending Whether the message is still being transcribed or generated.
      */
-    public Message(Role role, String text, boolean pending) {
+    Message(Role role, String text, boolean pending) {
         // INITIALIZATION: setting the constructor content w/ a randomly-generated ID
         this(UUID.randomUUID().toString(), role, text, pending);
     }
@@ -54,10 +50,10 @@ public class Message {
      * @param text The text content of the message.
      * @param pending Whether the message is still being transcribed or generated.
      */
-    public Message(String id, Role role, String text, boolean pending) {
+    private Message(String id, Role role, String text, boolean pending) {
 
         // INITIALIZATION: setting the constructor content
-        this.id = (id == null ? UUID.randomUUID().toString() : id);
+        this.id = (null == id ? UUID.randomUUID().toString() : id);
         this.role = role;
         this.text = text;
         this.pending = pending;
@@ -65,41 +61,55 @@ public class Message {
     }
 
     // -------------------- GETTERS ---------------------
+
     /**
      * A getter method for the message ID.
      * @return The unique ID associated with the message.
      */
-    public String getId() { return id; }
+    public final String getId() {
+        return id;
+    }
 
     /**
      * A getter method for the message role.
      * @return The role of the chatter.
      */
-    public Role getRole() { return role; }
+    public final Role getRole() {
+        return role;
+    }
 
     /**
      * A getter method for the message text.
      * @return The text content of the message.
      */
-    public String getText() { return text; }
+    public final String getText() {
+        return text;
+    }
 
     /**
      * A getter method for whether the message is still loading.
      * @return Whether the message is still being transcribed or generated.
      */
-    public boolean isPending() { return pending; }
+    public final boolean isPending() {
+        return pending;
+    }
 
     // -------------------- SETTERS ---------------------
+
     /**
      * A setter method for the message text.
      * @param text The new text content of the message.
      */
-    void setText(String text) { this.text = text; }
+    final void setText(String text) {
+        this.text = text;
+    }
 
     /**
      * A setter method for whether the message is still loading.
      * @param pending Whether the message is still being transcribed or generated.
      */
-    void setPending(boolean pending) { this.pending = pending; }
+    final void setPending(boolean pending) {
+        this.pending = pending;
+    }
 
 }

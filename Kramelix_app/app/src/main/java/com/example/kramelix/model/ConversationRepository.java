@@ -18,19 +18,19 @@ public class ConversationRepository {
      * Singleton instance of the repository per process.
      * Using a singleton here keeps all of the state data for as long as the app runs.
      */
-    private static ConversationRepository INSTANCE;
+    private static ConversationRepository instance;
 
     /**
      * A getter method for the singleton instance.
-     * @return The shared {@link ConversationRepository}.
+     * @return The shared ConversationRepository.
      */
     public static synchronized ConversationRepository get() {
 
         // PROCESS: checking if an instance already exists
-        if (INSTANCE == null) INSTANCE = new ConversationRepository();
+        if (null == instance) instance = new ConversationRepository();
 
         // OUTPUT:
-        return INSTANCE;
+        return instance;
 
     }
 
@@ -39,15 +39,18 @@ public class ConversationRepository {
      * A live data stream of the messages as an observable state in display order.
      * Initializes with an empty list to avoid null checks later.
      */
-    private final MutableLiveData<List<Message>> messages = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<List<Message>> messages = new MutableLiveData<>(new ArrayList<>(0));
 
     /**
      * A getter method for the message stream.
      * @return A live data stream of the messages in display order.
      */
-    public LiveData<List<Message>> getMessages() { return messages; }
+    public final LiveData<List<Message>> getMessages() {
+        return messages;
+    }
 
     // -------------------- MUTATION API ---------------------
+
     /**
      * This function adds a new pending message to the end of the conversation and returns it (so caller can keep the id).
      * It's synchronized to avoid the Thread concurrently modifying the list snapshot.
@@ -56,7 +59,7 @@ public class ConversationRepository {
      * @param text The initial text to display in the text bubble.
      * @return The newly created pending message.
      */
-    public synchronized Message addPendingMessage(Message.Role role, String text) {
+    public final synchronized Message addPendingMessage(Role role, String text) {
 
         // VARIABLE DECLARATION: creating a new msg
         Message msg = new Message(role, text, true);
@@ -78,7 +81,7 @@ public class ConversationRepository {
      * @param newText The new text to set.
      * @param pending The new pending flag to set.
      */
-    public synchronized void updateMessage(String id, String newText, Boolean pending) {
+    public final synchronized void updateMessage(String id, String newText, Boolean pending) {
 
         // PROCESS: retrieving the current conversation
         List<Message> current = ensureList(messages.getValue());
@@ -90,8 +93,8 @@ public class ConversationRepository {
             // TODO: consider adding some error-handling here if the ID is invalid
             if (m.getId().equals(id)) { // msg found
 
-                if (newText != null) m.setText(newText); // updating text
-                if (pending != null) m.setPending(pending); // updating flag
+                if (null != newText) m.setText(newText); // updating text
+                if (null != pending) m.setPending(pending); // updating flag
                 changed = true; // updating flag
                 break;
 
@@ -106,6 +109,7 @@ public class ConversationRepository {
     }
 
     // -------------------- HELPER METHODS ---------------------
+
     /**
      * This helper function ensures a non-null, mutable list for local edits.
      * If the LiveData somehow contained null elements, this returns a fresh list copy.
@@ -113,8 +117,8 @@ public class ConversationRepository {
      * @param src The list of messages to copy.
      * @return A non-null, mutable list of messages.
      */
-    private static List<Message> ensureList(List<Message> src) {
-        return (src == null) ? new ArrayList<>() : new ArrayList<>(src);
+    private static List<Message> ensureList(List<? extends Message> src) {
+        return (null == src) ? new ArrayList<>(0) : new ArrayList<>(src);
     }
 
 }

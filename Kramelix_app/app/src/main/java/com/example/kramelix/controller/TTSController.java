@@ -3,25 +3,26 @@ package com.example.kramelix.controller;
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
+
 import java.util.Locale;
 
 /**
  * This class will handle Text-to-Speech for the LLM
  */
-public class TTSController implements TextToSpeech.OnInitListener{
+public class TTSController implements TextToSpeech.OnInitListener {
     private static final String TAG = "TTSController";
 
     private final TextToSpeech textToSpeech;
 
-    public TTSController(Context context) {
+    TTSController(Context context) {
         textToSpeech = new TextToSpeech(context.getApplicationContext(), this);
     }
 
     @Override
-    public void onInit(int status) {
+    public final void onInit(int status) {
 
         // if no error found
-        if(status!=TextToSpeech.ERROR){
+        if (TextToSpeech.ERROR != status) {
             // voice will be with English accent
             textToSpeech.setLanguage(Locale.US);
 
@@ -32,24 +33,28 @@ public class TTSController implements TextToSpeech.OnInitListener{
      * Convert text to speech
      * @param text - llm's response
      */
-    public void speak(String text) {
-        if (text == null || text.isEmpty()) return;
-        try{
+    public final void speak(String text) {
+        if (null == text || text.isEmpty()) return;
+        try {
             textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-        } catch (Exception e) {
-            Log.e(TAG, "speak failed");
+        } catch (RuntimeException e) {
+            Log.e(TAG, "TTS speach failed");
         }
     }
 
     // -------------------- SHUTDOWN TTS --------------------
-    public void shutdown() {
+
+    /**
+     * Shuts down the TTS listener
+     */
+    public final void shutdown() {
         try {
-            if (textToSpeech != null) {
+            if (null != textToSpeech) {
                 textToSpeech.stop();
                 textToSpeech.shutdown();
             }
-        } catch (Exception e) {
-            Log.w(TAG, "shutdown tts failed", e);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "TTS shutdown failed", e);
         }
     }
 }
