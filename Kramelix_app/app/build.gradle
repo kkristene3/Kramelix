@@ -9,7 +9,7 @@ props.load(new FileInputStream(rootProject.file("local.properties")))
 android {
     namespace 'com.example.kramelix'
     // Use an SDK you have installed (36 is fine if you installed it; otherwise use 34/35)
-    compileSdk 36
+    compileSdk = 36
 
     defaultConfig {
         applicationId "com.example.kramelix"

@@ -33,7 +33,7 @@ import com.chaquo.python.Python;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.android.AndroidPlatform;
 import com.example.kramelix.R;
-import com.example.kramelix.ml.whisper.Whisper;
+import com.example.kramelix.whisperjni.Whisper;
 import com.example.kramelix.BuildConfig;
 import com.example.kramelix.model.ConversationRepository;
 import com.example.kramelix.model.Message;
@@ -338,7 +338,7 @@ public class MainActivity extends AppCompatActivity {
 
     // -------------------- Asset copy --------------------
 
-    /** Copy assets/models/<filename> to files/models/<filename> once, return the out File. */
+    /** Copy assets/models/ggml-tiny.en.bin to files/models/ggml-tiny.en.bin once, return the out File. */
     private File ensureModelCopiedOnce() {
         try {
             File outDir = new File(getFilesDir(), "models");
