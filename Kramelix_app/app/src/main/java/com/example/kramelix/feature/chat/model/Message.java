@@ -1,13 +1,39 @@
-package com.example.kramelix.model;
+package com.example.kramelix.feature.chat.model;
 
 import java.util.UUID;
 
 /**
- * This class represents the model for a message in a {@link ConversationRepository} between the user and the LLM.
+ * This model represents a single chat message exchanged between the user and the assistant (LLM).
+ *
+ * <p>It forms the core data unit within the chat feature, used by
+ * {@link com.example.kramelix.feature.chat.controller.ChatController} and
+ * {@link com.example.kramelix.feature.chat.model.ConversationRepository}
+ * to manage conversational state and render message bubbles in the UI.</p>
+ *
+ * <br>
+ * <strong>Responsibilities</strong>
+ * <ul>
+ *     <li>Encapsulates all metadata and content for a single chat message.</li>
+ *     <li>Maintains message ownership through a {@link Role} (e.g. USER or ASSISTANT).</li>
+ *     <li>Tracks lifecycle state (e.g. pending transcription or response generation).</li>
+ *     <li>Provides unique, immutable identifiers for stable diffing and repository updates.</li>
+ * </ul>
+ *
+ * <br>
+ * <strong>Contracts</strong>
+ * <ul>
+ *     <li>Each {@link Message} instance owns a globally unique {@code id} generated via {@link java.util.UUID}.</li>
+ *     <li>Instances are mutable only through package-private setters, ensuring repository-controlled updates.</li>
+ *     <li>{@code pending == true} indicates the message is still in-flight (not finalized by the system or model).</li>
+ * </ul>
+ *
+ * @author Amy Huang
+ * @since 1.0
  */
+
 public class Message {
 
-    // -------------------- COMPONENTS ---------------------
+    // -------------------- CONFIGURATION ---------------------
     /**
      * The unique ID associated with the message (needed for tracking conversation history).
      */
@@ -33,8 +59,8 @@ public class Message {
     /**
      * Constructor for a new message.
      *
-     * @param role The role of the chatter.
-     * @param text The text content of the message.
+     * @param role    The role of the chatter.
+     * @param text    The text content of the message.
      * @param pending Whether the message is still being transcribed or generated.
      */
     Message(Role role, String text, boolean pending) {
@@ -45,9 +71,9 @@ public class Message {
     /**
      * Constructor for a new message.
      *
-     * @param id The unique ID associated with the message.
-     * @param role The role of the chatter.
-     * @param text The text content of the message.
+     * @param id      The unique ID associated with the message.
+     * @param role    The role of the chatter.
+     * @param text    The text content of the message.
      * @param pending Whether the message is still being transcribed or generated.
      */
     private Message(String id, Role role, String text, boolean pending) {
@@ -64,6 +90,7 @@ public class Message {
 
     /**
      * A getter method for the message ID.
+     *
      * @return The unique ID associated with the message.
      */
     public final String getId() {
@@ -72,6 +99,7 @@ public class Message {
 
     /**
      * A getter method for the message role.
+     *
      * @return The role of the chatter.
      */
     public final Role getRole() {
@@ -80,6 +108,7 @@ public class Message {
 
     /**
      * A getter method for the message text.
+     *
      * @return The text content of the message.
      */
     public final String getText() {
@@ -88,7 +117,8 @@ public class Message {
 
     /**
      * A getter method for whether the message is still loading.
-     * @return Whether the message is still being transcribed or generated.
+     *
+     * @return {@code true} if the message is still being transcribed or generated; {@code false} otherwise.
      */
     public final boolean isPending() {
         return pending;
@@ -98,6 +128,7 @@ public class Message {
 
     /**
      * A setter method for the message text.
+     *
      * @param text The new text content of the message.
      */
     final void setText(String text) {
@@ -106,6 +137,7 @@ public class Message {
 
     /**
      * A setter method for whether the message is still loading.
+     *
      * @param pending Whether the message is still being transcribed or generated.
      */
     final void setPending(boolean pending) {

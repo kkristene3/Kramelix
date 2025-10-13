@@ -1,4 +1,4 @@
-package com.example.kramelix.view;
+package com.example.kramelix.feature.chat.view;
 
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -15,19 +15,49 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.kramelix.R;
-import com.example.kramelix.model.Message;
-import com.example.kramelix.model.Role;
+import com.example.kramelix.feature.chat.model.Message;
+import com.example.kramelix.feature.chat.model.Role;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 /**
- * This class represents the view for the adapter that binds {@link Message} items to chat row layouts for a RecyclerView.
+ * This RecyclerView adapter is responsible for rendering the chat conversation UI.
+ *
+ * <p>It binds {@link com.example.kramelix.feature.chat.model.Message} items
+ * to their respective chat row layouts, differentiating between user and assistant roles.
+ * It also manages lightweight 'pending' animations to visually indicate messages that are still
+ * being transcribed or generated.</p>
+ *
+ * <br>
+ * <strong>Responsibilities</strong>
+ * <ul>
+ *     <li>Inflates & binds chat bubble layouts for {@code USER} and {@code ASSISTANT} messages.</li>
+ *     <li>Animates pending messages (e.g. typing indicator).</li>
+ *     <li>Refreshes message snapshots received from
+ *     {@link com.example.kramelix.feature.chat.model.ConversationRepository} observers.</li>
+ * </ul>
+ *
+ * <br>
+ * <strong>Contracts</strong>
+ * <ul>
+ *     <li>All {@link #submit(Collection)} calls must occur on the main thread
+ *     (LiveData observers already fulfill this requirement).</li>
+ *     <li>Pending messages animate continuously until finalized or recycled.</li>
+ *     <li>Each ViewHolder cleans up its animations when detached or recycled
+ *     to prevent visual leaks or flickering states.</li>
+ *     <li>Message layouts must contain a {@code @+id/textMessage} {@link android.widget.TextView}.</li>
+ * </ul>
+ *
+ * @author Amy Huang
+ * @noinspection PublicConstructor
+ * @since 1.0
  */
 public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     // -------------------- VIEW TYPES ---------------------
+
     /**
      * The view type constant for USER bubbles.
      */
@@ -39,17 +69,19 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_ASSISTANT = 2;
 
     // -------------------- STATE ---------------------
+
     /**
      * Backing list for current messages in display order.
      * This is replaced via {@link #submit(Collection)} when the LiveData creates a new snapshot.
      */
     private final List<Message> data = new ArrayList<>(0);
 
-    // -------------------- PUBLIC API ---------------------
+    // -------------------- API ---------------------
 
     /**
      * This function replaces the current messages data with a new snapshot and refreshes the list.
      * AMY'S NOTE: This should be called on the main thread bc LiveData observers run on main by default.
+     *
      * @param msgs The new list of messages to display (null lists are treated as empty).
      */
     public final void submit(Collection<? extends Message> msgs) {
@@ -65,6 +97,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /**
      * A getter method for the view type of a given message.
+     *
      * @param position The position to query.
      * @return The view type of the message.
      */
@@ -82,7 +115,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     /**
      * This function creates a new ViewHolder for a given view type.
      *
-     * @param parent The ViewGroup into which the new View will be added after it is bound to an adapter position.
+     * @param parent   The ViewGroup into which the new View will be added after it is bound to an adapter position.
      * @param viewType The view type of the new View.
      * @return A new ViewHolder.
      */
@@ -106,7 +139,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /**
      * This function binds the data at the given position to the given ViewHolder.
-     * @param holder The ViewHolder to be updated to represent the msg contents.
+     *
+     * @param holder   The ViewHolder to be updated to represent the msg contents.
      * @param position The position of the item within the adapter's data set.
      */
     @Override
@@ -139,6 +173,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /**
      * A getter method for the number of items in the message list.
+     *
      * @return The number of items in the list.
      */
     @Override
@@ -177,6 +212,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         /**
          * Constructor for the view holder.
+         *
          * @param itemView The view to hold.
          */
         MsgVH(@NonNull View itemView) {
@@ -222,6 +258,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         /**
          * This helper function starts a simple 'typing' dots loop (".", "..", "...").
+         *
          * @param startWith Optional text string to display as the loading animation. If null/blank, uses "…".
          */
         final void startDots(String startWith) {
@@ -277,6 +314,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /**
      * This function ensures the animation stops when a view is recycled.
+     *
      * @param holder The ViewHolder for the view being recycled.
      */
     @Override
@@ -293,6 +331,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     /**
      * This function ensures the animation stops when a view is detached.
+     *
      * @param holder The ViewHolder of the view being detached.
      */
     @Override

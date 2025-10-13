@@ -14,6 +14,9 @@
 
 #include "whisper.h" // Whisper.cpp public API
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
+
 // Adding log macros for convenience ("whisper_jni" tag before msgs)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO , "whisper_jni", __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "whisper_jni", __VA_ARGS__)
@@ -91,8 +94,10 @@ static bool readWavTo16KMonoF32(const char *path, std::vector<float> &pcmf32Out)
             fread(&audioFmt, 2, 1, f); // 1 = PCM
             fread(&numCh, 2, 1, f); // channels (1 = mono, 2 = stereo, etc.)
             fread(&srcSr, 4, 1, f); // sample rate (e.g. 16000, 44100, 48000)
-            fread(&byteRate, 4, 1, f); // byte rate not used, but must be read to ensure correct indexing
-            fread(&blockAlign, 2, 1, f); // block align not used, but must be read to ensure correct indexing
+            fread(&byteRate, 4, 1,
+                  f); // byte rate not used, but must be read to ensure correct indexing
+            fread(&blockAlign, 2, 1,
+                  f); // block align not used, but must be read to ensure correct indexing
             fread(&bits, 2, 1, f); // bits per sample (16/24/32)
 
             // PROCESS: skipping any extra fmt bytes (unnecessary for basic PCM read)
@@ -214,7 +219,8 @@ static bool readWavTo16KMonoF32(const char *path, std::vector<float> &pcmf32Out)
     // PROCESS: resampling
     for (size_t i = 0; i < outN; ++i) {
 
-        double srcPos = (double) i / ratio; // fractional index (a point in time) within larger input (full src timeline)
+        double srcPos = (double) i /
+                        ratio; // fractional index (a point in time) within larger input (full src timeline)
         auto i0 = (size_t) srcPos; // left neighbour
         size_t i1 = std::min(mono.size() - 1, i0 + 1); // right neighbour (clamped)
         double time = srcPos - static_cast<double>(i0); // fractional part 0 ... 1
@@ -274,7 +280,8 @@ Java_com_example_kramelix_whisperjni_Whisper_initModel(JNIEnv *env, jclass, jstr
     }
 
     whisper_context_params params = whisper_context_default_params();
-    gCtx = whisper_init_from_file_with_params(modelPath, params); // creating a new Whisper context from the model file on disk
+    gCtx = whisper_init_from_file_with_params(modelPath,
+                                              params); // creating a new Whisper context from the model file on disk
     env->ReleaseStringUTFChars(jModelPath, modelPath); // releasing the pinned Java string
 
     // PROCESS: checking for load success
@@ -366,3 +373,5 @@ Java_com_example_kramelix_whisperjni_Whisper_transcribeWav(JNIEnv *env, jclass, 
     return env->NewStringUTF(out.c_str());
 
 }
+
+#pragma clang diagnostic pop

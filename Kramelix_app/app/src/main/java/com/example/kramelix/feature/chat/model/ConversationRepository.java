@@ -1,4 +1,4 @@
-package com.example.kramelix.model;
+package com.example.kramelix.feature.chat.model;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -8,8 +8,36 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * This class represents the model for a repository that holds the in-memory, per-session conversation history.
- * It exposes a {@link LiveData} stream so the UI can observe changes and update automatically.
+ * This model maintains the in-memory conversation history between the user and the assistant
+ * for the current app session.
+ *
+ * <p>The repository exposes a {@link androidx.lifecycle.LiveData} stream that UI layers can observe
+ * to render updates automatically. It encapsulates all message creation, mutation, and notification
+ * logic, ensuring thread-safe access from controllers such as
+ * {@link com.example.kramelix.feature.chat.controller.ChatController}.</p>
+ *
+ * <br>
+ * <strong>Responsibilities</strong>
+ * <ul>
+ *     <li>Owns the per-session list of {@link Message} objects representing the conversation timeline.</li>
+ *     <li>Exposes observable {@link LiveData} for reactive UI updates.</li>
+ *     <li>Provides thread-safe mutation APIs to add or update messages in order.</li>
+ *     <li>Ensures immutability of snapshots by posting unmodifiable list copies to observers.</li>
+ *     <li>Implements a lightweight singleton pattern to persist chat state across components.</li>
+ * </ul>
+ *
+ * <br>
+ * <strong>Contracts</strong>
+ * <ul>
+ *     <li>All repository modifications must occur through its synchronized public methods.</li>
+ *     <li>{@link #getMessages()} always returns a non-null stream; observers receive an empty list initially.</li>
+ *     <li>Message IDs are unique and stable throughout the app session.</li>
+ *     <li>Each {@link androidx.lifecycle.MutableLiveData#postValue(Object)} call emits a new immutable snapshot suitable for diffing in the UI.</li>
+ * </ul>
+ *
+ * @author Amy Huang
+ * @noinspection PublicConstructor
+ * @since 1.0
  */
 public class ConversationRepository {
 
@@ -22,14 +50,16 @@ public class ConversationRepository {
 
     /**
      * A getter method for the singleton instance.
+     *
      * @return The shared ConversationRepository.
      */
-    public static synchronized ConversationRepository get() {
+    public static synchronized ConversationRepository getInstance() {
 
         // PROCESS: checking if an instance already exists
         if (null == instance) instance = new ConversationRepository();
 
         // OUTPUT:
+        //noinspection StaticVariableUsedBeforeInitialization
         return instance;
 
     }
@@ -43,6 +73,7 @@ public class ConversationRepository {
 
     /**
      * A getter method for the message stream.
+     *
      * @return A live data stream of the messages in display order.
      */
     public final LiveData<List<Message>> getMessages() {
@@ -67,6 +98,7 @@ public class ConversationRepository {
         // PROCESS: retrieving the current conversation & adding the new msg
         List<Message> current = ensureList(messages.getValue());
         current.add(msg);
+
         messages.postValue(Collections.unmodifiableList(current)); // notifying observers
 
         // OUTPUT:
@@ -77,7 +109,7 @@ public class ConversationRepository {
     /**
      * This function updates the text and/or pending flag of an existing message, given the ID.
      *
-     * @param id The ID of the msg to update.
+     * @param id      The ID of the msg to update.
      * @param newText The new text to set.
      * @param pending The new pending flag to set.
      */
