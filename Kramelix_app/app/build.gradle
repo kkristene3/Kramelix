@@ -4,7 +4,7 @@ plugins {
 }
 
 def props = new Properties()
-props.load(new FileInputStream(rootProject.file("local.properties")))
+props.load(new FileInputStream(rootProject.file('local.properties')))
 
 android {
     namespace 'com.example.kramelix'
@@ -12,43 +12,43 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId "com.example.kramelix"
+        applicationId 'com.example.kramelix'
         minSdk 24
         targetSdk 36
         versionCode 1
-        versionName "1.0"
+        versionName '1.0'
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
-        buildConfigField "String", "OPENAI_API_KEY", "\"${props['OPENAI_API_KEY']}\""
+        buildConfigField 'String', 'OPENAI_API_KEY', "\"${props['OPENAI_API_KEY']}\""
 
         ndk {
             // For emulator + device. If you only run on a phone, you can keep just "arm64-v8a".
-            abiFilters "arm64-v8a", "x86_64"
+            abiFilters 'arm64-v8a', 'x86_64'
         }
 
         externalNativeBuild {
             cmake {
                 // C++ compiler flags
-                cppFlags "-O3 -fvisibility=hidden -fexceptions -frtti"
+                cppFlags '-O3 -fvisibility=hidden -fexceptions -frtti'
             }
         }
 
-        buildFeatures{
+        buildFeatures {
             buildConfig = true
         }
 
         // (Optional) flavors for Chaquopy
-        flavorDimensions "pyVersion"
+        flavorDimensions 'pyVersion'
         productFlavors {
             py313 {
-                dimension "pyVersion"
+                dimension 'pyVersion'
             }
         }
     }
 
     // Pin versions you actually have installed in SDK Manager
-    ndkVersion "29.0.14033849"
+    ndkVersion '29.0.14033849'
 
     buildFeatures {
         prefab false
@@ -56,8 +56,8 @@ android {
 
     externalNativeBuild {
         cmake {
-            path file("src/main/cpp/CMakeLists.txt")
-            version "3.22.1"
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.22.1'
         }
     }
 
@@ -76,27 +76,27 @@ android {
 
 chaquopy {
     defaultConfig {
-        version = "3.13"
+        version = '3.13'
         // Either point to a real Python 3.13 exe, or remove this to use Chaquopy's build env.
         // On Windows, forward slashes or double-escaped backslashes work.
         //Commented out this next line cause "Users/you" isn't a valid path. Either add Python to ur path or add the exact path in your local properties
         //buildPython "C:/Users/you/AppData/Local/Programs/Python/Python313/python.exe"
 
-        pip{
-            install("python-dotenv")
+        pip {
+            install('python-dotenv')
 
             //install OpenAI API
-            install("httpx")
+            install('httpx')
         }
     }
     productFlavors {
         py313 {
-            version "3.13"
+            version '3.13'
         }
     }
     sourceSets {
         main {
-            srcDirs = ["src/main/python"]
+            srcDirs = ['src/main/python']
         }
     }
 }
