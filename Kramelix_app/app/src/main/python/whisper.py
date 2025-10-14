@@ -1,3 +1,22 @@
+"""
+This module serves as the Python bridge for Kramelix's AI and transcription
+pipeline. It currently defines lightweight helpers for testing Chaquopy
+integration and invoking the OpenAI Chat Completions API via `httpx`.
+
+Functions:
+    - test_function(num): Verifies Python-Java integration by returning num + 1.
+    - chat(api_key, prompt): Sends a short emotional-aware chat request to OpenAI.
+
+Responsibilities:
+    - Provide a thin HTTP wrapper callable from Android (via Chaquopy/JNI).
+    - Return concise LLM responses suitable for in-app use.
+    - Serve as the prototype for later sentiment-aware expansions.
+
+Authors: Alex Oprea, Kristen Duong
+
+Since: 1.0
+"""
+
 import httpx
 import json
 

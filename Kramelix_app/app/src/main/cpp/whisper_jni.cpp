@@ -7,13 +7,15 @@
 #include <jni.h>
 #include <android/log.h>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
 #include <algorithm>
 
 #include "whisper.h" // Whisper.cpp public API
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
 
 // Adding log macros for convenience ("whisper_jni" tag before msgs)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO , "whisper_jni", __VA_ARGS__)
@@ -22,7 +24,7 @@
 /**
  * Global pointer to loaded Whisper context -> to be used in model initialization & reused for every transcription
  */
-static whisper_context* g_ctx = nullptr;
+static whisper_context *gCtx = nullptr;
 
 // -------------------- WAV loader & pre-processing --------------------
 /**
@@ -33,13 +35,13 @@ static whisper_context* g_ctx = nullptr;
  * - If sample rate != 16000: linear resample to 16 kHz.
  *
  * @param path the absolute path to the WAV file on disk
- * @param pcmf32_out an array filled with normalized mono samples in range [-1, 1] at 16 kHz
+ * @param pcmf32Out an array filled with normalized mono samples in range [-1, 1] at 16 kHz
  * @return true on success; false on failure (WAV is unreadable/unsupported)
  */
-static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf32_out) {
+static bool readWavTo16KMonoF32(const char *path, std::vector<float> &pcmf32Out) {
 
     // PROCESS: opening the file in binary mode
-    FILE* f = fopen(path, "rb");
+    FILE *f = fopen(path, "rb");
 
     if (!f) { // error-handling
 
@@ -50,12 +52,14 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
     }
 
     // PROCESS: checking for expected start "RIFF" and end "WAVE" in header
-    char riff[4]; uint32_t riff_size; char wave[4];
+    char riff[4], wave[4];
+    uint32_t riffSize;
 
     if (fread(riff, 1, 4, f) != 4
-        || fread(&riff_size, 4, 1, f) != 1
+        || fread(&riffSize, 4, 1, f) != 1
         || fread(wave, 1, 4, f) != 4
-        || memcmp(riff, "RIFF", 4) != 0 || memcmp(wave, "WAVE", 4) != 0) { // invalid header -> therefore, not a standard WAV
+        || memcmp(riff, "RIFF", 4) != 0
+        || memcmp(wave, "WAVE", 4) != 0) { // invalid header -> therefore, not a standard WAV
 
         // OUTPUT:
         LOGE("No RIFF/WAVE found in the WAV header!");
@@ -65,13 +69,15 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
     }
 
     // VARIABLE DECLARATION: setting labels for format & data chunk positions
-    uint16_t audio_fmt = 0, num_ch = 0, bits = 0; uint32_t src_sr = 0; uint16_t block_align=0; uint32_t byte_rate=0;
-    uint32_t data_bytes = 0; long data_pos = 0;
+    uint16_t audioFmt = 0, numCh = 0, bits = 0, blockAlign = 0;
+    uint32_t srcSr = 0, byteRate = 0, dataBytes = 0;
+    long dataPos = 0;
 
     // PROCESS: locating fmt & data chunks
     while (!feof(f)) {
 
-        char id[4]; uint32_t sz = 0;
+        char id[4];
+        uint32_t sz = 0;
 
         // PROCESS: reading 4-byte chunk ID + 4-byte chunk size; if impossible, we've hit EOF or a corrupt file
         if (fread(id, 1, 4, f) != 4 || fread(&sz, 4, 1, f) != 1) break;
@@ -85,11 +91,13 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
             }
 
             // PROCESS: reading format fields
-            fread(&audio_fmt, 2, 1, f); // 1 = PCM
-            fread(&num_ch, 2, 1, f); // channels (1 = mono, 2 = stereo, etc.)
-            fread(&src_sr, 4, 1, f); // sample rate (e.g. 16000, 44100, 48000)
-            fread(&byte_rate, 4, 1, f); // byte rate not used, but must be read to ensure correct indexing
-            fread(&block_align, 2, 1, f); // block align not used, but must be read to ensure correct indexing
+            fread(&audioFmt, 2, 1, f); // 1 = PCM
+            fread(&numCh, 2, 1, f); // channels (1 = mono, 2 = stereo, etc.)
+            fread(&srcSr, 4, 1, f); // sample rate (e.g. 16000, 44100, 48000)
+            fread(&byteRate, 4, 1,
+                  f); // byte rate not used, but must be read to ensure correct indexing
+            fread(&blockAlign, 2, 1,
+                  f); // block align not used, but must be read to ensure correct indexing
             fread(&bits, 2, 1, f); // bits per sample (16/24/32)
 
             // PROCESS: skipping any extra fmt bytes (unnecessary for basic PCM read)
@@ -98,8 +106,8 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
         } else if (!memcmp(id, "data", 4)) { // found expect data chunk
 
             // PROCESS: saving audio data start & # of bytes for later reads
-            data_bytes = sz;
-            data_pos = ftell(f);
+            dataBytes = sz;
+            dataPos = ftell(f);
             fseek(f, sz, SEEK_CUR); // skipping data for now (will seek back here later)
 
         } else { // unexpected/unnecessary extra chunk
@@ -112,7 +120,7 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
     }
 
     // PROCESS: checking for a real data chunk
-    if (data_pos == 0 || data_bytes == 0) { // file doesn't contain readable audio sample
+    if (dataPos == 0 || dataBytes == 0) { // file doesn't contain readable audio sample
 
         // OUTPUT:
         LOGE("No audio data chunk readable!");
@@ -122,17 +130,17 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
     }
 
     // PROCESS: checking that format is an int PCM with supported bit depth
-    if (audio_fmt != 1 || (bits != 16 && bits != 24 && bits != 32)) { // unsupported
+    if (audioFmt != 1 || (bits != 16 && bits != 24 && bits != 32)) { // unsupported
 
         // OUTPUT:
-        LOGE("Unsupported WAV format: fmt = %u, bits = %u", audio_fmt, bits);
+        LOGE("Unsupported WAV format: fmt = %u, bits = %u", audioFmt, bits);
         fclose(f); // closing file
         return false;
 
     }
 
     // PROCESS: checking for at least one audio channel
-    if (num_ch < 1) { // probably corrupted or smth
+    if (numCh < 1) { // probably corrupted or smth
 
         // OUTPUT:
         LOGE("Audio channels found < 1!");
@@ -143,18 +151,18 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
 
     // PROCESS: reading into mono float samples in [-1, 1] (expected by Whisper); for stereo, we avg. to mono
     std::vector<float> mono;
-    mono.reserve(data_bytes / (bits/8)); // rough upper bound
-    fseek(f, data_pos, SEEK_SET); // jumping to start of audio data
+    mono.reserve(dataBytes / (bits / 8)); // rough upper bound
+    fseek(f, dataPos, SEEK_SET); // jumping to start of audio data
 
     // PROCESS: computing how many frames (samples per channel) are present
-    const size_t frames = data_bytes / (num_ch * (bits/8));
+    const size_t frames = dataBytes / (numCh * (bits / 8));
 
     for (size_t i = 0; i < frames; ++i) {
 
         double acc = 0.0; // accumulator across channels for averaging to mono
 
         // AMY'S NOTE: refer to https://www.mikeash.com/pyblog/friday-qa-2012-10-12-obtaining-and-interpreting-audio-data.html for common normalization processes
-        for (int ch = 0; ch < num_ch; ++ch) {
+        for (int ch = 0; ch < numCh; ++ch) {
 
             if (bits == 16) { // expected & most common on mobile
 
@@ -182,19 +190,19 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
         }
 
         // PROCESS: averaging across channels to mono
-        mono.push_back((float) (acc / num_ch));
+        mono.push_back((float) (acc / numCh));
 
     }
 
     fclose(f); // closing file after handling
 
     // PROCESS: checking if sample rate matches target
-    if (src_sr == 16000) { // no resample needed
+    if (srcSr == 16000) { // no resample needed
 
-        pcmf32_out.swap(mono); // sending mono to output
+        pcmf32Out.swap(mono); // sending mono to output
         return true;
 
-    } else if (src_sr == 0) { // invalid/corrupt
+    } else if (srcSr == 0) { // invalid/corrupt
 
         // OUTPUT:
         LOGE("invalid sample rate 0");
@@ -203,26 +211,28 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
     }
 
     // PROCESS: linear resample to 16 kHz
-    const double ratio = 16000.0 / (double) src_sr; // aka how much to stretch/shrink time
-    const size_t outN = (size_t) std::max<size_t>(1, (size_t) (mono.size() * ratio));
-    pcmf32_out.resize(outN);
+    const double ratio = 16000.0 / (double) srcSr; // aka how much to stretch/shrink time
+    const double scaled = static_cast<double>(mono.size()) * ratio;
+    const size_t outN = static_cast<size_t>(std::max(1.0, scaled));
+    pcmf32Out.resize(outN);
 
     // PROCESS: resampling
     for (size_t i = 0; i < outN; ++i) {
 
-        double srcPos = (double) i / ratio; // fractional index (a point in time) within larger input (full src timeline)
+        double srcPos = (double) i /
+                        ratio; // fractional index (a point in time) within larger input (full src timeline)
         auto i0 = (size_t) srcPos; // left neighbour
         size_t i1 = std::min(mono.size() - 1, i0 + 1); // right neighbour (clamped)
-        double time = srcPos - i0; // fractional part 0 ... 1
+        double time = srcPos - static_cast<double>(i0); // fractional part 0 ... 1
 
         // PROCESS: linear interpolation btwn neighbours to give approx. of the audio signal at srcPos
-        auto signal = (float)((1.0 - time) * mono[i0] + time * mono[i1]);
-        pcmf32_out[i] = signal;
+        auto signal = (float) ((1.0 - time) * mono[i0] + time * mono[i1]);
+        pcmf32Out[i] = signal;
 
     }
 
     // OUTPUT: logging resampled stats for debugging (size in samples, not bytes)
-    LOGI("Resampled %zu -> %zu (sr %u -> 16000)", mono.size(), pcmf32_out.size(), src_sr);
+    LOGI("Resampled %zu -> %zu (sr %u -> 16000)", mono.size(), pcmf32Out.size(), srcSr);
     return true;
 }
 
@@ -253,27 +263,31 @@ static bool read_wav_to_16k_mono_f32(const char* path, std::vector<float>& pcmf3
  * @param jModelPath the Java String pointing to the model file
  * @return JNI_TRUE on success (model loaded); JNI_FALSE on failure (bad path/corrupt file/low memory)
  */
-extern "C" JNIEXPORT jboolean JNICALL
-Java_com_example_kramelix_ml_whisper_Whisper_initModel(JNIEnv* env, jclass, jstring jModelPath) {
+extern "C" JNIEXPORT jboolean
+
+JNICALL
+Java_com_example_kramelix_whisperjni_Whisper_initModel(JNIEnv *env, jclass, jstring jModelPath) {
 
     // VARIABLE DECLARATION: converting Java model path to C string
-    const char* modelPath = env->GetStringUTFChars(jModelPath, nullptr);
+    const char *modelPath = env->GetStringUTFChars(jModelPath, nullptr);
 
     // PROCESS: checking if a model already exists
-    if (g_ctx) { // exists
+    if (gCtx) { // exists
 
-        whisper_free(g_ctx); // freeing model to avoid leaks
-        g_ctx = nullptr;
+        whisper_free(gCtx); // freeing model to avoid leaks
+        gCtx = nullptr;
 
     }
 
-    g_ctx = whisper_init_from_file(modelPath); // creating a new Whisper context from the model file on disk
+    whisper_context_params params = whisper_context_default_params();
+    gCtx = whisper_init_from_file_with_params(modelPath,
+                                              params); // creating a new Whisper context from the model file on disk
     env->ReleaseStringUTFChars(jModelPath, modelPath); // releasing the pinned Java string
 
     // PROCESS: checking for load success
-    if (!g_ctx) { // fail
+    if (!gCtx) { // fail
 
-         // OUTPUT:
+        // OUTPUT:
         LOGE("`whisper_init_from_file` failed!");
         return JNI_FALSE;
 
@@ -293,11 +307,13 @@ Java_com_example_kramelix_ml_whisper_Whisper_initModel(JNIEnv* env, jclass, jstr
  * @param jWavPath the Java string pointing to the WAV audio file
  * @return a new Java String with the transcript text on success; a bracketed error message on failure
  */
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_example_kramelix_ml_whisper_Whisper_transcribeWav(JNIEnv* env, jclass, jstring jWavPath) {
+extern "C" JNIEXPORT jstring
+
+JNICALL
+Java_com_example_kramelix_whisperjni_Whisper_transcribeWav(JNIEnv *env, jclass, jstring jWavPath) {
 
     // PROCESS: checking that model's been initialized
-    if (!g_ctx) {
+    if (!gCtx) {
 
         // OUTPUT:
         return env->NewStringUTF("[Whisper not initialized]");
@@ -305,13 +321,13 @@ Java_com_example_kramelix_ml_whisper_Whisper_transcribeWav(JNIEnv* env, jclass, 
     }
 
     // VARIABLE DECLARATION: converting Java path to C string
-    const char* wavPath = env->GetStringUTFChars(jWavPath, nullptr);
+    const char *wavPath = env->GetStringUTFChars(jWavPath, nullptr);
 
     // PROCESS: converting WAV to mono float @ 16 kHz
     std::vector<float> pcmf32;
 
     // Calling our helper function:
-    if (!read_wav_to_16k_mono_f32(wavPath, pcmf32)) { // error-handling
+    if (!readWavTo16KMonoF32(wavPath, pcmf32)) { // error-handling
 
         env->ReleaseStringUTFChars(jWavPath, wavPath); // release before returning
 
@@ -333,7 +349,7 @@ Java_com_example_kramelix_ml_whisper_Whisper_transcribeWav(JNIEnv* env, jclass, 
     // params.speed_up = true; // quality tradeoff for faster decoding
 
     // PROCESS: running the model on our float samples
-    int rc = whisper_full(g_ctx, params, pcmf32.data(), (int) pcmf32.size());
+    int rc = whisper_full(gCtx, params, pcmf32.data(), (int) pcmf32.size());
 
     env->ReleaseStringUTFChars(jWavPath, wavPath); // releasing the pinned Java string
 
@@ -347,13 +363,15 @@ Java_com_example_kramelix_ml_whisper_Whisper_transcribeWav(JNIEnv* env, jclass, 
 
     // PROCESS: gathering all segment texts
     std::string out;
-    int n = whisper_full_n_segments(g_ctx);
+    int n = whisper_full_n_segments(gCtx);
 
     for (int i = 0; i < n; ++i) {
-        out += whisper_full_get_segment_text(g_ctx, i); // appending each segment to output
+        out += whisper_full_get_segment_text(gCtx, i); // appending each segment to output
     }
 
     // OUTPUT: returning new Java String
     return env->NewStringUTF(out.c_str());
 
 }
+
+#pragma clang diagnostic pop

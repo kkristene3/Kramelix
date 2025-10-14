@@ -27,4 +27,4 @@ target_link_libraries(whisper_jni PRIVATE whisper ${log-lib}) # connecting Whisp
 # FIXME OPTIMIZE: we might consider changing this later if we ever switch to smth else for our app to run faster
 if (ANDROID)
     target_compile_definitions(whisper_jni PRIVATE -DGGML_USE_CPU)
-endif()
+endif ()

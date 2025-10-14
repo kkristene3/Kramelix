@@ -3,10 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".controller.MainActivity">
+    tools:context=".MainActivity">
 
     <!-- Logo -->
     <FrameLayout
@@ -19,10 +18,10 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
-            android:id="@+id/logo"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:srcCompat="@drawable/kramelix_logo" />
+            app:srcCompat="@drawable/kramelix_logo"
+            android:contentDescription="@string/logo_description" />
     </FrameLayout>
 
     <!-- Title -->
