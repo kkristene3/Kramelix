@@ -11,13 +11,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.kramelix.BuildConfig;
+import com.example.kramelix.chatgpt.LlmClient;
 import com.example.kramelix.feature.chat.controller.ChatController;
 import com.example.kramelix.feature.chat.model.Message;
 import com.example.kramelix.feature.chat.model.Role;
-import com.example.kramelix.chatgpt.LlmClient;
 import com.example.kramelix.whisperjni.Whisper;
 
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -64,6 +66,11 @@ public final class TranscriptionController {
      * Logcat tag.
      */
     private static final String TAG = "TranscriptionController";
+
+    /**
+     * Rough character budget for conversation history window. Tune as needed.
+     */
+    private static final int CONTEXT_BUDGET_CHARS = 4000;
 
     // -------------------- STATE --------------------
 
@@ -215,7 +222,11 @@ public final class TranscriptionController {
                 String llmText;
 
                 try {
-                    llmText = llm.complete(BuildConfig.OPENAI_API_KEY, safeUserText);
+
+                    // PROCESS: building msg system & trimmed history (excludes pending msgs)
+                    List<Map<String, String>> msgs = chat.buildOpenAiMessages(null, CONTEXT_BUDGET_CHARS);
+                    llmText = llm.complete(BuildConfig.OPENAI_API_KEY, msgs);
+
                 } catch (RuntimeException e) { // error-handling
 
                     // LOG OUTPUT:
@@ -230,6 +241,9 @@ public final class TranscriptionController {
 
                 // PROCESS: replacing ASSISTANT pending w/ final response
                 chat.update(assistantPending, safeResp, false);
+
+//                // LOG OUTPUT:
+//                Log.i(TAG, "Full conversation:" + chat.getConversationJson());
 
                 // PROCESS: running TTS
                 if (!"[no response given]".equals(safeResp)) {
@@ -252,6 +266,10 @@ public final class TranscriptionController {
                 postToast("Transcription failed: " + e.getMessage());
 
             }
+//            catch (JSONException e) {
+//                // LOG OUTPUT:
+//                Log.e(TAG, "Msgs couldn't serialize to JSON", e);
+//            }
 
         }, THREAD_NAME).start();
 

@@ -140,6 +140,58 @@ public class ConversationRepository {
 
     }
 
+    // -------------------- EXPORT / CONTEXT --------------------
+
+    /**
+     * This helper function returns a copy of the current conversation in display order.
+     * Pending messages are included; callers can filter if needed.
+     *
+     * <p>For debugging purposes only.</p>
+     *
+     * @return A snapshot of the current conversation.
+     */
+//    @androidx.annotation.VisibleForTesting // uncomment this when used for unit tests
+    /* package */
+    public final synchronized List<Message> snapshot() {
+        return Collections.unmodifiableList(ensureList(messages.getValue()));
+    }
+
+    /**
+     * This function builds a history window (oldest trimmed first) under a character budget.
+     *
+     * @param includePending Whether to include messages still 'pending.'
+     * @param budgetChars    A rough limit for total characters across messages.
+     * @return A newest-first window (ordered from oldest to newest when returned).
+     */
+    public final synchronized List<Message> buildHistoryWindow(boolean includePending, int budgetChars) {
+
+        // VARIABLE DECLARATION: retrieving current convo
+        List<Message> src = ensureList(messages.getValue());
+        List<Message> window = new ArrayList<>(0);
+        int used = 0;
+
+        // PROCESS: walking from newest msg to oldest
+        for (int i = src.size() - 1; 0 <= i; i--) {
+
+            Message m = src.get(i);
+
+            if (!includePending && m.isPending()) continue; // skipping pending msgs if not wanted
+
+            int add = (null == m.getText() ? 0 : m.getText().length()) + 20; // crude per-msg overhead
+
+            if (used + add > budgetChars && !window.isEmpty()) break;
+
+            window.add(0, m); // prepending to restore chronological order
+
+            used += add;
+
+        }
+
+        // OUTPUT:
+        return Collections.unmodifiableList(window);
+
+    }
+
     // -------------------- HELPER METHODS ---------------------
 
     /**

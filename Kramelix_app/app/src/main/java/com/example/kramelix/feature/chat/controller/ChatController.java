@@ -11,6 +11,8 @@ import com.example.kramelix.feature.chat.model.Message;
 import com.example.kramelix.feature.chat.model.Role;
 import com.example.kramelix.feature.chat.view.ChatAdapter;
 
+import org.json.JSONException;
+
 import java.util.Objects;
 
 /**
@@ -82,6 +84,49 @@ public final class ChatController {
 
     }
 
+    // -------------------- CONTEXT FOR LLM --------------------
+
+    /**
+     * This function build an OpenAI-style messages array from the current conversation,
+     * with a system prompt & a char-budget window (oldest trimmed first).
+     *
+     * @param systemPrompt The custom system prompt (first message)
+     * @param budgetChars  The character budget for history (e.g. 4000)
+     * @return A list of maps: [{"role": "...", "content": "..."}, ...]
+     */
+    @NonNull
+    public java.util.List<java.util.Map<String, String>> buildOpenAiMessages(@Nullable String systemPrompt, int budgetChars) {
+
+        // VARIABLE DECLARATION: the msgs map
+        java.util.List<java.util.Map<String, String>> out = new java.util.ArrayList<>(0);
+
+        // PROCESS: creating the system prompt if provided one
+        if (null != systemPrompt && !systemPrompt.isBlank()) {
+            java.util.Map<String, String> sys = new java.util.HashMap<>(2);
+            sys.put("role", "system");
+            sys.put("content", systemPrompt);
+            out.add(sys);
+        }
+
+        // PROCESS: retrieving the history window
+        java.util.List<Message> window = repo.buildHistoryWindow(false, budgetChars);
+
+        // PROCESS: building the map
+        for (Message m : window) {
+
+            java.util.Map<String, String> mm = new java.util.HashMap<>(2);
+            mm.put("role", (Role.USER == m.getRole()) ? "user" : "assistant");
+            mm.put("content", null == m.getText() ? "" : m.getText());
+            out.add(mm);
+
+        }
+
+        // OUTPUT:
+        return java.util.Collections.unmodifiableList(out);
+
+    }
+
+
     // -------------------- HELPERS --------------------
 
     /**
@@ -117,6 +162,35 @@ public final class ChatController {
      */
     public void update(@NonNull Message msg, @Nullable String newText, @Nullable Boolean pending) {
         repo.updateMessage(Objects.requireNonNull(msg, "msg").getId(), newText, pending);
+    }
+
+    /**
+     * This getter function returns the returns the full chat history (oldest to newest).
+     *
+     * @return A JSON array string representing all messages in order.
+     * @throws JSONException If any message fails to serialize to JSON.
+     */
+    @NonNull
+    public String getConversationJson() throws JSONException {
+
+        // VARIABLE DECLARATION:
+        org.json.JSONArray arr = new org.json.JSONArray();
+
+        // PROCESS: retrieving the chat content
+        for (Message m : repo.snapshot()) {
+
+            org.json.JSONObject o = new org.json.JSONObject();
+
+            o.put("role", (Role.USER == m.getRole()) ? "user" : "assistant");
+            o.put("content", null == m.getText() ? "" : m.getText());
+
+            arr.put(o); // appending to array
+
+        }
+
+        // OUTPUT:
+        return arr.toString();
+
     }
 
 }

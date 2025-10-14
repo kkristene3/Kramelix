@@ -9,6 +9,8 @@ import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
 
+import java.util.Map;
+
 /**
  * This client provides a thin Java wrapper around the Python {@code whisper.py} module
  * via the Chaquopy runtime, exposing a simple synchronous API to call the Python-side
@@ -65,17 +67,18 @@ public final class LlmClient {
     // -------------------- CHAT COMPLETION --------------------
 
     /**
-     * This function synchronously invokes the Python {@code whisper.chat(api_key, prompt)} function.
+     * This function synchronously invokes the Python
+     * {@code whisper.chat(api_key, messages_json)} function.
      *
      * <p>This call performs network I/O through Python and must be run on a worker thread.
      * The function initializes the Python runtime on first use if not already started.</p>
      *
-     * @param apiKey The OpenAI (or compatible) API key.
-     * @param prompt The user prompt text.
+     * @param apiKey   The OpenAI (or compatible) API key.
+     * @param messages OpenAI-style messages (system + history).
      * @return The assistant's response, or {@code null} if the Python module failed or returned nothing.
      */
     @Nullable
-    public String complete(@Nullable String apiKey, @Nullable String prompt) {
+    public String complete(@Nullable String apiKey, @NonNull Iterable<? extends Map<String, String>> messages) {
 
         // PROCESS: initializing Chaquopy runtime once
         if (!Python.isStarted()) {
@@ -86,8 +89,29 @@ public final class LlmClient {
         Python py = Python.getInstance();
         PyObject mod = py.getModule("whisper");
 
+        // PROCESS: serializing messages to JSON for robust interop
+        String json;
+
+        try {
+
+            org.json.JSONArray arr = new org.json.JSONArray();
+
+            for (java.util.Map<String, String> m : messages) {
+                org.json.JSONObject o = new org.json.JSONObject();
+                o.put("role", m.get("role"));
+                o.put("content", m.get("content"));
+                arr.put(o);
+            }
+
+            json = arr.toString();
+
+        } catch (org.json.JSONException e) { // error-handling
+            // OUTPUT:
+            return null;
+        }
+
         // PROCESS: calling Python-side chat() safely
-        PyObject resp = mod.callAttr("chat", null != apiKey ? apiKey : "", null != prompt ? prompt : "");
+        PyObject resp = mod.callAttr("chat", (null == apiKey ? "" : apiKey), json);
 
         // OUTPUT: returning the response as a String (or null)
         return (null != resp) ? resp.toString() : null;
