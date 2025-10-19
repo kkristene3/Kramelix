@@ -8,7 +8,6 @@ import androidx.annotation.Nullable;
 import com.chaquo.python.PyObject;
 import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
-import com.example.kramelix.MainActivity;
 import com.example.kramelix.feature.taskexe.controller.TaskController;
 
 import java.util.Map;
@@ -118,18 +117,27 @@ public final class LlmClient {
         // Splitting the response into task command (index 0) and chat response (index 1)
         String[] respParts = splitMsg(resp.toString());
 
-        TaskController taskExe = new TaskController();
+        TaskController taskExe = TaskController.getInstance(app);
 
-        //If the task command is recognized as a supported command, execute the task
-        if (!respParts[0].equals("chat") && !respParts[0].equals("other") && !respParts[0].equals("unsupportedTask")){
-            //call the executeTask function in the TaskController class
+        // If the task command is recognized as a supported command, execute the task
+        if (!respParts[0].equals("chat") &&
+                !respParts[0].equals("other") &&
+                !respParts[0].equals("unsupportedTask")){
+
+            // call the executeTask function in the TaskController class
             boolean taskStatus = taskExe.executeTask(respParts[0]);
-            //TEMPORARY - to see what the task is
-            System.out.println(respParts[0]);
-        }
 
-        //TODO Have the LLM tell the user if the task was unable to be completed (taskStatus is false)
-        //The LLM should do this automatically if it is given the text FAILURETOTASKITUP (untested)
+            // TODO TEMPORARY - to see what the task is
+            System.out.println(respParts[0]);
+
+            // TODO Have the LLM tell the user if the task was unable to be completed (taskStatus is false) > make it a nicer msg
+            // The LLM should do this automatically if it is given the text FAILURETOTASKITUP (untested)
+
+            // If llm cannot perform task, respond with the following message
+            if (!taskStatus) {
+                return "Sorry, I cannot perform this task. Do you have another question to ask me?";
+            }
+        }
 
         // OUTPUT: returning the response as a String
         return respParts[1];

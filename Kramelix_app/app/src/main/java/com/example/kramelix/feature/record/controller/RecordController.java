@@ -10,6 +10,8 @@ import androidx.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 
+import com.example.kramelix.feature.taskexe.controller.TaskController;
+
 /**
  * This controller owns the microphone recording & audio playback lifecycles (no UI widgets).
  *
@@ -61,6 +63,13 @@ public final class RecordController {
     @Nullable
     private MediaPlayer mediaPlayer;
 
+    /**
+     * TaskController instance to control music when user gives a new task to llm
+     */
+    @NonNull
+    private final TaskController taskExe;
+
+
     // -------------------- LIFECYCLE --------------------
 
     /**
@@ -71,6 +80,7 @@ public final class RecordController {
     private RecordController(@NonNull Context ctx) {
         // INITIALIZATION: avoiding Activity leak by storing application context.
         this.ctx = ctx.getApplicationContext();
+        this.taskExe = TaskController.getInstance(ctx);
     }
 
     /**
@@ -93,6 +103,9 @@ public final class RecordController {
      * @throws IOException If audio capture can't start or temp file can't be opened.
      */
     public void startRecording(@NonNull File wavOut) throws IOException {
+
+        // PROCESS: stop any music if playing
+        taskExe.stopMusic();
 
         // PROCESS: having PCM record run writher thread internally
         recorder.start(wavOut);
