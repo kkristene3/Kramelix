@@ -29,7 +29,7 @@ import java.util.Map;
  *     <li>Model/API initialization should occur once before repeated calls.</li>
  * </ul>
  *
- * @author Alex Oprea, Amy Huang
+ * @author Alex Oprea, Amy Huang, Kristen Duong
  * @since 1.0
  */
 public final class LlmClient {
@@ -127,11 +127,11 @@ public final class LlmClient {
             // call the executeTask function in the TaskController class
             boolean taskStatus = taskExe.executeTask(respParts[0]);
 
-            // TODO TEMPORARY - to see what the task is
+            // TODO: TEMPORARY - to see what the task is
             System.out.println(respParts[0]);
 
-            // TODO Have the LLM tell the user if the task was unable to be completed (taskStatus is false) > make it a nicer msg
-            // The LLM should do this automatically if it is given the text FAILURETOTASKITUP (untested)
+            // TODO: Have the LLM tell the user if the task was unable to be completed (taskStatus is false) > make the llm create a response
+            //  The LLM should do this automatically if it is given the text FAILURETOTASKITUP (untested)
 
             // If llm cannot perform task, respond with the following message
             if (!taskStatus) {
