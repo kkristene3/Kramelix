@@ -6,9 +6,12 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
+
+import com.example.kramelix.MainActivity;
 
 /**
  * This controller executes user-requested device actions recognized by the LLM.
@@ -36,7 +39,7 @@ import androidx.annotation.NonNull;
  *     <li>Unknown or unsupported task strings must fail gracefully without side effects.</li>
  * </ul>
  *
- * @author Alex Oprea, Kristen Duong
+ * @author Alex Oprea, Kristen Duong, Amy Huang
  * @noinspection BooleanMethodNameMustStartWithQuestion, Singleton
  * @since 1.0
  */
@@ -54,17 +57,18 @@ public final class TaskController {
     /**
      * Constructor
      *
-     * @param context Any valid {@link Context}; the application context will be retained.
+     * @param context Current valid {@link Context}.
      */
     private TaskController(@NonNull Context context) {
-        this.context = context.getApplicationContext();
+        // AMY'S NOTE: keep context as-is!!! DON'T convert to App context
+        this.context = context;
     }
 
     /**
      * The public "gateway" to access the TaskController object
      * Creates a new object on the first call, afterwards, the pre-existing instance is returned
      *
-     * @param context Any valid {@link Context}; the application context will be retained.
+     * @param context Current valid {@link Context}.
      * @return the shared TaskController instance
      */
     public static synchronized TaskController getInstance(@NonNull Context context) {
@@ -99,10 +103,7 @@ public final class TaskController {
             else if (1 == taskParams.length) {
                 return playMusic(taskParams[0]);
             }
-        }
-
-        // Task: Set an Alarm
-        else if (task.contains("setAlarm(")) {
+        } else if (task.contains("setAlarm(")) { // task: Set an Alarm
 
             // extract the parameters from the string
             String[] taskParams = getParams(task);
@@ -113,12 +114,26 @@ public final class TaskController {
                 return setAlarm(taskParams[0]);
             }
 
+        } else if (task.contains("call(")) { // task: call a contact/number
+            String[] params = getParams(task);
+            if (1 == params.length) {
+                String target = params[0].trim();
+
+                // Request permission through Activity before executing
+                if (context instanceof MainActivity) {
+                    MainActivity activity = (MainActivity) context;
+
+                    if (!activity.ensureCallPermission()) {
+                        // Permission requested → must stop here
+                        return false;
+                    }
+                }
+
+                return callNumber(target);
+            }
         }
 
-        /*else if (task.contains("call(")){
-
-        }
-
+        /*
         else if (task.contains("text(")){
 
         }
@@ -268,4 +283,38 @@ public final class TaskController {
             return false;
         }
     }
+
+    // ----------------------- TASK: CALL CONTACT/PHONE NUMBER -----------------------
+
+    private boolean callNumber(@NonNull String number) {
+        try {
+            // If permission is missing, ask MainActivity to request it
+            if (context instanceof MainActivity) {
+                MainActivity activity = (MainActivity) context;
+                if (!activity.ensureCallPermission()) {
+                    System.out.println("TaskController - Waiting for CALL_PHONE permission...");
+                    return false;  // stop here; will retry once permission is granted
+                }
+            } else {
+                System.out.println("TaskController - Missing MainActivity context");
+                return false;
+            }
+
+            // Basic cleanup
+            String clean = number.replaceAll("[^\\d+]", "");
+
+            Intent intent = new Intent(Intent.ACTION_CALL);
+            intent.setData(Uri.parse("tel:" + clean));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            context.startActivity(intent);
+            System.out.println("TaskController - Calling " + clean);
+            return true;
+
+        } catch (RuntimeException e) {
+            System.out.println("TaskController - callNumber failed: " + e.getMessage());
+            return false;
+        }
+    }
+
 }
