@@ -1,5 +1,6 @@
 package com.example.kramelix.feature.taskexe.controller;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -9,9 +10,37 @@ import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
 
-import java.lang.System;
-
-public class TaskController {
+/**
+ * This controller executes user-requested device actions recognized by the LLM.
+ *
+ * <p>It exposes a simple string-based task execution API, allowing higher-level logic
+ * (e.g. the transcription + LLM pipeline) to trigger actions such as playing music or
+ * setting an alarm. The controller acts as an abstraction over Android system services
+ * that must be initialized with a {@link Context}.</p>
+ *
+ * <br>
+ * <strong>Responsibilities</strong>
+ * <ul>
+ *     <li>Own a lightweight registry of supported tasks (e.g. music playback, alarms).</li>
+ *     <li>Parse task command strings and dispatch to the correct implementation.</li>
+ *     <li>Manage system resources such as {@link android.media.MediaPlayer} safely.</li>
+ *     <li>Serve as the feature-level extension point for future “assistant-like” abilities.</li>
+ * </ul>
+ *
+ * <br>
+ * <strong>Contracts</strong>
+ * <ul>
+ *     <li>This class is a per-process singleton; access is via {@link #getInstance(Context)}.</li>
+ *     <li>Execution methods must never block the UI thread for long operations.</li>
+ *     <li>All task command formats must be explicitly validated and handled defensively.</li>
+ *     <li>Unknown or unsupported task strings must fail gracefully without side effects.</li>
+ * </ul>
+ *
+ * @author Alex Oprea, Kristen Duong
+ * @noinspection BooleanMethodNameMustStartWithQuestion, Singleton
+ * @since 1.0
+ */
+public final class TaskController {
 
     // -------------------- STATE --------------------
     private static TaskController instance;
@@ -21,12 +50,13 @@ public class TaskController {
     private MediaPlayer mediaPlayer;
 
     // ------------------------- LIFECYCLE -------------------------
+
     /**
      * Constructor
      *
      * @param context Any valid {@link Context}; the application context will be retained.
      */
-    public TaskController(@NonNull Context context) {
+    private TaskController(@NonNull Context context) {
         this.context = context.getApplicationContext();
     }
 
@@ -38,9 +68,10 @@ public class TaskController {
      * @return the shared TaskController instance
      */
     public static synchronized TaskController getInstance(@NonNull Context context) {
-        if (instance == null) {
+        if (null == instance) {
             instance = new TaskController(context);
         }
+        //noinspection StaticVariableUsedBeforeInitialization
         return instance;
     }
 
@@ -51,34 +82,34 @@ public class TaskController {
      *
      * @param task String representing the task that needs to be performed.
      * @return Boolean representing the status of the task's completion
-     * */
-    public boolean executeTask(String task){
+     */
+    public boolean executeTask(String task) {
 
         // Task: Play Music
-        if (task.contains("playMusic(")){
+        if (task.contains("playMusic(")) {
 
             // extract the parameters from the string
             String[] taskParams = getParams(task);
 
             // if we found a song and artist in the params, then we call that version of the function
-            if (taskParams.length == 2){
+            if (2 == taskParams.length) {
                 return playMusic(taskParams[0], taskParams[1]);
             }
             // if only a song was found, then we call the song only playMusic function
-            else if (taskParams.length == 1){
+            else if (1 == taskParams.length) {
                 return playMusic(taskParams[0]);
             }
         }
 
         // Task: Set an Alarm
-        else if (task.contains("setAlarm(")){
+        else if (task.contains("setAlarm(")) {
 
             // extract the parameters from the string
             String[] taskParams = getParams(task);
 
             // TODO: currently only accepts time in minutes,
             //  a user may want to set a timer using hours, or at an exact time; will have to adjust
-            if (taskParams.length == 1){
+            if (1 == taskParams.length) {
                 return setAlarm(taskParams[0]);
             }
 
@@ -105,14 +136,12 @@ public class TaskController {
     }
 
     // ----------------------- TASK PARAMETER -----------------------
-    private String[] getParams(String text){
+    private static String[] getParams(String text) {
         // get the parameters between the ()
-        String taskParams = text.substring(text.indexOf("(")+1, text.length()-2);
+        String taskParams = text.substring(text.indexOf('(') + 1, text.length() - 2);
 
         // separate the parameters into an array using the , delimiter
-        String[] params = taskParams.split(",");
-
-        return params;
+        return taskParams.split(",");
     }
 
     // ---------------------- TASK: PLAY MUSIC -----------------------
@@ -120,11 +149,12 @@ public class TaskController {
     /**
      * Function for playing a song
      *
-     * @param song The song that the user wants to play
+     * @param song   The song that the user wants to play
      * @param artist The artist of the given song
-     * @return Boolean representing the success of the music playing. Success = true, any error (including unable to find song) is false*/
-    private boolean playMusic(String song, String artist){
-        System.out.println("Song: "+song+", Artist: "+artist);
+     * @return Boolean representing the success of the music playing. Success = true, any error (including unable to find song) is false
+     */
+    private boolean playMusic(String song, String artist) {
+        System.out.println("Song: " + song + ", Artist: " + artist);
         return playMusic(song);
     }
 
@@ -133,12 +163,12 @@ public class TaskController {
      *
      * @param song The song that the user wants to play
      * @return Boolean representing the success of the music playing
-     * */
-    private boolean playMusic(String song){
+     */
+    private boolean playMusic(String song) {
 
         try {
             // PROCESS: clean previous MediaPlayer
-            if (mediaPlayer != null) {
+            if (null != mediaPlayer) {
                 mediaPlayer.release();
             }
 
@@ -146,10 +176,10 @@ public class TaskController {
             String songName = song.trim().toLowerCase().replace(" ", "_");
 
             // PROCESS: get resource ID (music file)
-            int resId = context.getResources().getIdentifier(songName, "raw", context.getPackageName());
+            @SuppressLint("DiscouragedApi") int resId = context.getResources().getIdentifier(songName, "raw", context.getPackageName());
 
             // PROCESS: if cannot find song in folder
-            if (resId == 0) {
+            if (0 == resId) {
                 System.out.println("TaskController - Song not found in res/raw: " + songName);
                 return false;
             }
@@ -162,8 +192,11 @@ public class TaskController {
             System.out.println("TaskController - Playing: " + songName);
             return true;
 
-        } catch (Exception e) { // error-handling
-            System.out.println("TaskController - Failed to play music: " + e);
+        } catch (IllegalStateException e) {
+            System.out.println("TaskController - Illegal state, failed to play music: " + e);
+            return false;
+        } catch (RuntimeException e) { // error-handling
+            System.out.println("TaskController - Runtime, failed to play music: " + e);
             return false;
         }
     }
@@ -173,7 +206,7 @@ public class TaskController {
      */
     public void stopMusic() {
         // PROCESS: stop playing music if llm is currently playing music
-        if (mediaPlayer != null) {
+        if (null != mediaPlayer) {
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.stop();
             }
@@ -190,10 +223,11 @@ public class TaskController {
      *
      * @param inputStr String representing for how long, in minutes, to set the alarm for
      */
-    private boolean setAlarm(String inputStr){
+    private boolean setAlarm(String inputStr) {
         try {
 
             // PROCESS: convert input string to int
+            //noinspection DynamicRegexReplaceableByCompiledPattern
             String timeStr = inputStr.replaceAll("[^0-9]", ""); // keeps digits only
             int minutes = Integer.parseInt(timeStr);
 
@@ -205,9 +239,10 @@ public class TaskController {
             Intent intent = new Intent(context, AlarmReceiver.class);
             PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
+            // FIXME OPTIMIZE: could probably remove the if-block here bc the SDK_INT is always >= 24
             // PROCESS: set the alarm to go off at an exact time, regardless if phone is in low-power "idle" or "doze" mode.
             // Check the Android version of device and set the alarm appropriately
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) { // for devices running Android's current version
+            if (android.os.Build.VERSION_CODES.M <= android.os.Build.VERSION.SDK_INT) { // for devices running Android's current version
                 alarmManager.setExactAndAllowWhileIdle(
                         AlarmManager.ELAPSED_REALTIME_WAKEUP,
                         triggerAtMillis,
@@ -225,8 +260,11 @@ public class TaskController {
             System.out.println("TaskController - Alarm set for " + minutes + " minutes from now");
             return true;
 
-        } catch (Exception e) { // error-handling
-            System.out.println("TaskController - Failed to set alarm: " + e);
+        } catch (NumberFormatException e) {
+            System.out.println("TaskController - Number format, failed to set alarm: " + e);
+            return false;
+        } catch (RuntimeException e) { // error-handling
+            System.out.println("TaskController - Runtime, failed to set alarm: " + e);
             return false;
         }
     }
