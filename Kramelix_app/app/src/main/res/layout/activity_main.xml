@@ -126,5 +126,12 @@
 
     </LinearLayout>
 
+    <TextClock
+        android:id="@+id/textClock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:layout_editor_absoluteX="20dp"
+        tools:layout_editor_absoluteY="42dp" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

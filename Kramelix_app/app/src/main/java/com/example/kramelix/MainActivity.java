@@ -86,7 +86,6 @@ public final class MainActivity extends AppCompatActivity {
     private TranscriptionController transcriptionController;
     private TTSController ttsController;
     private LlmClient llmClient;
-
     private TaskController taskController;
 
     // -------------------- PATHS --------------------

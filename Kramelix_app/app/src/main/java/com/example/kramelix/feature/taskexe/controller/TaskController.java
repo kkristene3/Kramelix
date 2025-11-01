@@ -453,6 +453,7 @@ public final class TaskController {
     // ------------------------------- HANDLE UI CHANGES -------------------------------
 
     /**
+     * Associate the music controls layout with a Linear Layout contained
      *
      * @param layout - the Linear Layout containing the music control buttons;
      *               received from MainActivity.java
@@ -485,10 +486,19 @@ public final class TaskController {
         }
     }
 
+    /**
+     * Associate the Play/Resume music button with an ImageButton
+     * @param button - the Image Button used to control playing and resuming music
+     */
     public void setPlayResumeMusicButton (ImageButton button) {
         this.playResumeMusicButton = button;
     }
 
+    /**
+     * Change the play/resume button icon based on whether music is being played or not
+     *
+     * @param button - the Image Button used to control playing and resuming music
+     */
     private void switchPlayResumeMusicIcon (ImageButton button) {
         if (isMusicPlaying())
             button.setImageResource(R.drawable.pause);
@@ -496,6 +506,11 @@ public final class TaskController {
             button.setImageResource(R.drawable.play);
     }
 
+    /**
+     * Check if music is currently being played
+     *
+     * @return true if music is playing, false otherwise
+     */
     public boolean isMusicPlaying() {
         return mediaPlayer != null && mediaPlayer.isPlaying();
     }
