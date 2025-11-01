@@ -69,7 +69,6 @@ public final class MainActivity extends AppCompatActivity {
 
     // -------------------- UI --------------------
     private ToggleButton recordButton;
-    private ToggleButton playRecButton;
     private TextView recordText;
     private RecyclerView chatRecycler;
 
@@ -125,7 +124,6 @@ public final class MainActivity extends AppCompatActivity {
 
         // VARIABLE DECLARATION: view bindings
         recordButton = findViewById(R.id.recordButton);
-        playRecButton = findViewById(R.id.playRecButton);
         recordText = findViewById(R.id.recordText);
         chatRecycler = findViewById(R.id.chatRecycler);
 
@@ -190,7 +188,6 @@ public final class MainActivity extends AppCompatActivity {
      */
     private void setupButtons() {
         recordButton.setOnClickListener(v -> onRecordToggled(recordButton.isChecked()));
-        playRecButton.setOnClickListener(v -> onPlayToggled(playRecButton.isChecked()));
     }
 
     /**
@@ -232,7 +229,7 @@ public final class MainActivity extends AppCompatActivity {
                 }
             } else {
 
-                // PROCESS: requesting permission & rmbring to record
+                // PROCESS: requesting permission & remembering to record
                 recordPendingAfterPermission = true;
 
                 ActivityCompat.requestPermissions(
@@ -286,36 +283,6 @@ public final class MainActivity extends AppCompatActivity {
                     ttsController::speak
             );
 
-        }
-
-    }
-
-    /**
-     * This function handles the play toggle and starts/stops local playback of the latest WAV.
-     *
-     * @param on whether the play toggle is on
-     */
-    private void onPlayToggled(boolean on) {
-
-        if (on) {
-
-            try {
-                recordController.startPlayback(wavPath);
-            } catch (IOException e) {
-                // LOG OUTPUT:
-                Log.e(TAG, "startPlayback failure (IO error)", e);
-            } catch (RuntimeException e) {
-
-                // LOG OUTPUT:
-                Log.e(TAG, "startPlayback failure (runtime exception", e);
-                playRecButton.setChecked(false); // updating UI
-
-                // OUTPUT: UX feedback
-                Toast.makeText(this, "Play failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-
-            }
-        } else {
-            recordController.stopPlayback();
         }
 
     }
