@@ -2,13 +2,26 @@ package com.example.kramelix.feature.taskexe.controller;
 
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.SystemClock;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
+import androidx.media.app.NotificationCompat.MediaStyle;
+
+
+import com.example.kramelix.R;
 
 /**
  * This controller executes user-requested device actions recognized by the LLM.
@@ -47,7 +60,20 @@ public final class TaskController {
     private final Context context;
 
     // -------------------- PLAY MUSIC VARIABLE --------------------
-    private MediaPlayer mediaPlayer;
+    MediaPlayer mediaPlayer;
+    private int pausedTime;
+
+    private MediaSessionCompat mediaSession;
+
+    String songName;
+
+    // -------------------- NOTIFICATION CHANNEL --------------------
+    private static final String CHANNEL_ID = "Media Channel";
+    NotificationManager notificationManager;
+
+    // ----------------------------- UI -----------------------------
+    private LinearLayout musicControlsLayout;
+    private ImageButton playResumeMusicButton;
 
     // ------------------------- LIFECYCLE -------------------------
 
@@ -58,6 +84,8 @@ public final class TaskController {
      */
     private TaskController(@NonNull Context context) {
         this.context = context.getApplicationContext();
+        initMediaSession();
+        createNotificationChannel();
     }
 
     /**
@@ -73,6 +101,48 @@ public final class TaskController {
         }
         //noinspection StaticVariableUsedBeforeInitialization
         return instance;
+    }
+
+    /**
+     * Set up a Media Session to handle music playback in notification
+     */
+    private void initMediaSession() {
+        mediaSession = new MediaSessionCompat(context, "TaskController");
+
+        // PROCESS: set initial playback state with actions that will be used
+        PlaybackStateCompat state = new PlaybackStateCompat.Builder()
+                .setActions(
+                        PlaybackStateCompat.ACTION_PLAY |
+                                PlaybackStateCompat.ACTION_PAUSE |
+                                PlaybackStateCompat.ACTION_STOP |
+                                PlaybackStateCompat.ACTION_PLAY_PAUSE
+                )
+                .setState(PlaybackStateCompat.STATE_STOPPED, 0, 1.0f)
+                .build();
+        mediaSession.setPlaybackState(state);
+
+        // PROCESS: receives media buttons, transport controls, and commands
+        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+            @Override
+            public void onPlay() {
+                resumeMusic();
+            }
+
+            @Override
+            public void onPause() {
+                pauseMusic();
+            }
+
+            @Override
+            public void onStop() { // TODO: remove later?
+                stopMusic();
+            }
+        });
+
+        mediaSession.setActive(true); // indicate session is active
+
+        // PROCESS: create controller
+        MediaControllerCompat mediaController = new MediaControllerCompat(context, mediaSession.getSessionToken());
     }
 
     // ----------------------- EXECUTING TASKS -----------------------
@@ -173,7 +243,7 @@ public final class TaskController {
             }
 
             // PROCESS: ensure song name is readable by AndroidStudio
-            String songName = song.trim().toLowerCase().replace(" ", "_");
+            songName = song.trim().toLowerCase().replace(" ", "_");
 
             // PROCESS: get resource ID (music file)
             @SuppressLint("DiscouragedApi") int resId = context.getResources().getIdentifier(songName, "raw", context.getPackageName());
@@ -186,7 +256,19 @@ public final class TaskController {
 
             // PROCESS: create and start music player
             mediaPlayer = MediaPlayer.create(context, resId);
+            mediaPlayer.setOnCompletionListener(mp -> stopMusic()); // TODO
             mediaPlayer.start();
+
+            // update UI -> show music controls
+            showMusicControls();
+
+            // PROCESS: update playback state
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
+
+            // TODO: can update metadata here -> using MediaMetadataCompat
+
+            // PROCESS: trigger notification
+            showNotification();
 
             // PROCESS: print result in logs
             System.out.println("TaskController - Playing: " + songName);
@@ -202,6 +284,32 @@ public final class TaskController {
     }
 
     /**
+     * Function to pause music
+     */
+    public void pauseMusic() {
+        if (isMusicPlaying()) {
+            mediaPlayer.pause(); // pause song
+            pausedTime = mediaPlayer.getCurrentPosition(); // get time of song it was paused at
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED); // update playback state
+            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
+            System.out.println("TaskController - Music paused");
+        }
+    }
+
+    /**
+     * Function to resume music
+     */
+    public void resumeMusic() {
+        if (mediaPlayer != null) {
+            mediaPlayer.seekTo(pausedTime);
+            mediaPlayer.start(); // start playing song from where it was paused
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING); // update playback state
+            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
+            System.out.println("TaskController - Music resumed");
+        }
+    }
+
+    /**
      * Function to stop playing music
      */
     public void stopMusic() {
@@ -212,8 +320,30 @@ public final class TaskController {
             }
             mediaPlayer.release();
             mediaPlayer = null;
+            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED); // update playback state
+            hideMusicControls(); // update UI -> hide music controls
             System.out.println("TaskController - Music stopped");
+
+            // remove notification
+            notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(1);
         }
+    }
+
+    /**
+     * This function will set the Playback state to the state given
+     *
+     * @param state - what playback state to set it to
+     */
+    private void updatePlaybackState(int state) {
+        PlaybackStateCompat.Builder builder = new PlaybackStateCompat.Builder()
+                .setActions(
+                        PlaybackStateCompat.ACTION_PLAY |
+                                PlaybackStateCompat.ACTION_PAUSE |
+                                PlaybackStateCompat.ACTION_STOP
+                )
+                .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f);
+        mediaSession.setPlaybackState(builder.build());
     }
 
     // ----------------------- TASK: SET ALARM -----------------------
@@ -268,4 +398,106 @@ public final class TaskController {
             return false;
         }
     }
+
+    // -------------------- NOTIFICATION CHANNEL --------------------
+
+    /**
+     * This function register the app's notification channel with the system
+     */
+    private void createNotificationChannel() {
+        // PROCESS: create the notification channel
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            CharSequence name = "Media Playback";
+            int importance = NotificationManager.IMPORTANCE_LOW;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            notificationManager = context.getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    /**
+     * This function creates the notification to display
+     */
+    public void showNotification() {
+
+        // PROCESS: create a play/pause intent
+        Intent playPauseIntent = new Intent(context, MediaActionReceiver.class)
+                .setAction("ACTION_PLAY_PAUSE");
+        PendingIntent playPausePendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                playPauseIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // PROCESS: build notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.kramelix_logo) // FIXME: this could later be changed to the song's album cover (if there's time)
+                .setContentTitle("Now Playing...")
+                .setContentText(songName)
+                .setOnlyAlertOnce(true)
+                .setOngoing(true)
+                .setStyle(new MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken())
+                        .setShowActionsInCompactView(0)) // 0 = play/pause
+                .addAction(new NotificationCompat.Action(
+                        R.drawable.play, "Play/Pause", playPausePendingIntent // index 0
+                ));
+
+        // PROCESS: get the system's notification center and post the notification
+        android.app.NotificationManager notificationManager =
+                (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(1, builder.build());
+    }
+
+    // ------------------------------- HANDLE UI CHANGES -------------------------------
+
+    /**
+     *
+     * @param layout - the Linear Layout containing the music control buttons;
+     *               received from MainActivity.java
+     */
+    public void setMusicControlsLayout (LinearLayout layout) {
+        this.musicControlsLayout = layout;
+    }
+
+    /**
+     * Set the layout to VISIBLE
+     */
+    private void showMusicControls() {
+        if (musicControlsLayout != null) {
+            // runs on the main thread
+            new android.os.Handler(context.getMainLooper()).post(() -> {
+                musicControlsLayout.setVisibility(View.VISIBLE);
+            });
+        }
+    }
+
+    /**
+     * Set the layout to INVISIBLE
+     */
+    private void hideMusicControls() {
+        if (musicControlsLayout != null) {
+            // runs on the main thread
+            new android.os.Handler(context.getMainLooper()).post(() -> {
+                musicControlsLayout.setVisibility(View.INVISIBLE);
+            });
+        }
+    }
+
+    public void setPlayResumeMusicButton (ImageButton button) {
+        this.playResumeMusicButton = button;
+    }
+
+    private void switchPlayResumeMusicIcon (ImageButton button) {
+        if (isMusicPlaying())
+            button.setImageResource(R.drawable.pause);
+        else
+            button.setImageResource(R.drawable.play);
+    }
+
+    public boolean isMusicPlaying() {
+        return mediaPlayer != null && mediaPlayer.isPlaying();
+    }
+
 }

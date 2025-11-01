@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -21,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.kramelix.chatgpt.LlmClient;
 import com.example.kramelix.feature.chat.controller.ChatController;
 import com.example.kramelix.feature.record.controller.RecordController;
+import com.example.kramelix.feature.taskexe.controller.TaskController;
 import com.example.kramelix.feature.transcribe.controller.TranscriptionController;
 import com.example.kramelix.feature.tts.controller.TTSController;
 
@@ -31,9 +34,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.SyncFailedException;
 
+import kotlinx.coroutines.scheduling.Task;
+
 /**
  * This class acts as the app's entry point: binds chat UI, handles mic permission, & delegates
- * recording, playback, transcription, LLM, and TTS to feature controllers.
+ * recording, transcription, LLM, and TTS to feature controllers.
  *
  * <p>MainActivity intentionally stays thin: it wires buttons & forwards
  * actions to the appropriate controllers.</p>
@@ -68,9 +73,12 @@ public final class MainActivity extends AppCompatActivity {
     private static final String MODEL_DEST_NAME = "ggml-tiny.en.bin";
 
     // -------------------- UI --------------------
+    private RecyclerView chatRecycler;
     private ToggleButton recordButton;
     private TextView recordText;
-    private RecyclerView chatRecycler;
+    private LinearLayout musicControlsLayout;
+    private ImageButton playResumeMusicButton;
+    private ImageButton stopMusicButton;
 
     // -------------------- CONTROLLERS --------------------
     private ChatController chatController;
@@ -78,6 +86,8 @@ public final class MainActivity extends AppCompatActivity {
     private TranscriptionController transcriptionController;
     private TTSController ttsController;
     private LlmClient llmClient;
+
+    private TaskController taskController;
 
     // -------------------- PATHS --------------------
     private File wavPath;
@@ -123,9 +133,12 @@ public final class MainActivity extends AppCompatActivity {
     private void bindUi() {
 
         // VARIABLE DECLARATION: view bindings
+        chatRecycler = findViewById(R.id.chatRecycler);
         recordButton = findViewById(R.id.recordButton);
         recordText = findViewById(R.id.recordText);
-        chatRecycler = findViewById(R.id.chatRecycler);
+        musicControlsLayout = findViewById(R.id.musicControlsLayout);
+        playResumeMusicButton = findViewById(R.id.playResumeMusicButton);
+        stopMusicButton = findViewById(R.id.stopMusicButton);
 
         // VARIABLE DECLARATION: prepare the session's WAV path (e.g. <app>/files/Music/recording.wav)
         wavPath = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "recording.wav");
@@ -148,7 +161,11 @@ public final class MainActivity extends AppCompatActivity {
         llmClient = LlmClient.createLlmClient(this);
         ttsController = TTSController.getInstance(this);
         transcriptionController = TranscriptionController.getInstance(this, chatController, llmClient);
+        taskController = TaskController.getInstance(this);
 
+        // PROCESS: send elements to TaskController to enable UI updates
+        taskController.setMusicControlsLayout(musicControlsLayout);
+        taskController.setPlayResumeMusicButton(playResumeMusicButton);
     }
 
     // -------------------- MODEL INIT --------------------
@@ -184,10 +201,24 @@ public final class MainActivity extends AppCompatActivity {
     // -------------------- BUTTON HANDLERS --------------------
 
     /**
-     * This function wires click listeners for record/play buttons.
+     * This function wires click listeners for record button.
      */
     private void setupButtons() {
         recordButton.setOnClickListener(v -> onRecordToggled(recordButton.isChecked()));
+
+        // set play/resume music button listener
+        playResumeMusicButton.setOnClickListener(v -> {
+            if (taskController.isMusicPlaying()) {
+                taskController.pauseMusic();
+            } else {
+                taskController.resumeMusic();
+            }
+        });
+
+        // set stop music button listener
+        stopMusicButton.setOnClickListener(v -> {
+            taskController.stopMusic();
+        });
     }
 
     /**

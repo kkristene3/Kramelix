@@ -104,8 +104,8 @@ public final class RecordController {
      */
     public void startRecording(@NonNull File wavOut) throws IOException {
 
-        // PROCESS: stop any music if playing
-        taskExe.stopMusic();
+        // PROCESS: pause any music if playing
+        taskExe.pauseMusic();
 
         // PROCESS: having PCM record run writher thread internally
         recorder.start(wavOut);
@@ -132,87 +132,6 @@ public final class RecordController {
         // OUTPUT: UX feedback
         Toast.makeText(ctx, "Saved: " + size + " bytes\n" + wavOut.getAbsolutePath(),
                 Toast.LENGTH_SHORT).show();
-
-    }
-
-    // -------------------- PLAYBACK --------------------
-
-    /**
-     * This helper function checks if a usable recording exists at the provided path.
-     *
-     * @param wavOut The WAV file to inspect.
-     * @return {@code true} if the file exists and looks non-trivial.
-     */
-    private static boolean hasUsableRecording(@NonNull File wavOut) {
-        // OUTPUT:
-        return wavOut.exists() && MIN_WAV_BYTES < wavOut.length();
-    }
-
-    /**
-     * This function starts playing the provided WAV file through {@link MediaPlayer}.
-     *
-     * @param wavOut The WAV file to play.
-     * @throws IOException If the data source can't be opened or prepared.
-     */
-    public void startPlayback(@NonNull File wavOut) throws IOException {
-
-        // ERROR-HANDLING: guarding against missing/too-short recording
-        if (!hasUsableRecording(wavOut)) {
-
-            // FIXME OPTIMIZE: 2025-10-13 we should probably display a better msg?
-            // OUTPUT:
-            Toast.makeText(ctx, "No/short recording. Did you stop recording?",
-                    Toast.LENGTH_SHORT).show();
-            return;
-
-        }
-
-        // PROCESS: if already playing, stop & release first
-        if (null != mediaPlayer) {
-            stopPlayback();
-        }
-
-        // VARIABLE DECLARATION: fresh MediaPlayer instance
-        mediaPlayer = new MediaPlayer();
-
-        // PROCESS: wiring the media source, then prepping & starting
-        mediaPlayer.setDataSource(wavOut.getAbsolutePath());
-        mediaPlayer.prepare(); // sync prepare; file is local
-        mediaPlayer.start();
-
-        // OUTPUT: UX feedback
-        Toast.makeText(ctx, "Playing...", Toast.LENGTH_SHORT).show();
-
-        // PROCESS: auto-releasing when playback completes
-        mediaPlayer.setOnCompletionListener(mp -> stopPlayback());
-
-    }
-
-    /**
-     * This function stops playback if active & releases the {@link MediaPlayer}.
-     * Safe to call multiple times.
-     */
-    public void stopPlayback() {
-
-        // PROCESS: stopping may throw if not in a started state; guarding with try/catch
-        try {
-
-            if (null != mediaPlayer) { // exists
-
-                mediaPlayer.stop();
-                mediaPlayer.release();
-
-            }
-
-        } catch (IllegalStateException ignore) {
-        } // error-handling: ignoring irrelevant state errors (e.g. double-stop)
-        finally {
-            // PROCESS: clearing reference to reflect 'not playing' state
-            mediaPlayer = null;
-        }
-
-        // OUTPUT: UX feedback
-        Toast.makeText(ctx, "Stopped", Toast.LENGTH_SHORT).show();
 
     }
 
