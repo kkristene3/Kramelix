@@ -112,4 +112,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    implementation libs.media
+    implementation libs.core.ktx
 }
