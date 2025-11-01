@@ -8,6 +8,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.MediaPlayer;
+import android.os.CountDownTimer;
 import android.os.SystemClock;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -15,6 +16,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -22,6 +24,11 @@ import androidx.media.app.NotificationCompat.MediaStyle;
 
 
 import com.example.kramelix.R;
+
+import org.w3c.dom.Text;
+
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 /**
  * This controller executes user-requested device actions recognized by the LLM.
@@ -62,10 +69,12 @@ public final class TaskController {
     // -------------------- PLAY MUSIC VARIABLE --------------------
     MediaPlayer mediaPlayer;
     private int pausedTime;
-
     private MediaSessionCompat mediaSession;
-
     String songName;
+
+    // -------------------- ALARM COUNTDOWN TIMER --------------------
+    private CountDownTimer alarmCountdownTimer;
+
 
     // -------------------- NOTIFICATION CHANNEL --------------------
     private static final String CHANNEL_ID = "Media Channel";
@@ -74,8 +83,9 @@ public final class TaskController {
     // ----------------------------- UI -----------------------------
     private LinearLayout musicControlsLayout;
     private ImageButton playResumeMusicButton;
+    private TextView alarmCountdownText;
 
-    // ------------------------- LIFECYCLE -------------------------
+    // ----------------------------- LIFECYCLE -----------------------------
 
     /**
      * Constructor
@@ -140,9 +150,22 @@ public final class TaskController {
         });
 
         mediaSession.setActive(true); // indicate session is active
+    }
 
-        // PROCESS: create controller
-        MediaControllerCompat mediaController = new MediaControllerCompat(context, mediaSession.getSessionToken());
+    /**
+     * Associate the music controls layout with a Linear Layout container
+     * Associate the play/resume button with an Image button
+     * Associate the alarm countdown time with a TextView
+     *
+     * @param layout- the Linear Layout containing the music control buttons;
+     *              received from MainActivity.java
+     * @param playResumeMusicButton - the Image Button a user clicks to pause/resume music
+     * @param alarmCountdownText - the TextView showing the countdown for the alarm
+     */
+    public void setUIElements(LinearLayout layout, ImageButton playResumeMusicButton, TextView alarmCountdownText) {
+        this.musicControlsLayout = layout;
+        this.playResumeMusicButton = playResumeMusicButton;
+        this.alarmCountdownText = alarmCountdownText;
     }
 
     // ----------------------- EXECUTING TASKS -----------------------
@@ -256,7 +279,7 @@ public final class TaskController {
 
             // PROCESS: create and start music player
             mediaPlayer = MediaPlayer.create(context, resId);
-            mediaPlayer.setOnCompletionListener(mp -> stopMusic()); // TODO
+            mediaPlayer.setOnCompletionListener(mp -> stopMusic());
             mediaPlayer.start();
 
             // update UI -> show music controls
@@ -357,7 +380,7 @@ public final class TaskController {
         try {
 
             // PROCESS: convert input string to int
-            //noinspection DynamicRegexReplaceableByCompiledPattern
+            // noinspection DynamicRegexReplaceableByCompiledPattern
             String timeStr = inputStr.replaceAll("[^0-9]", ""); // keeps digits only
             int minutes = Integer.parseInt(timeStr);
 
@@ -385,6 +408,31 @@ public final class TaskController {
                         alarmIntent
                 );
             }
+
+            // show countdown
+            showAlarmTime();
+
+            // create countdown on main (UI) thread
+            new android.os.Handler(context.getMainLooper()).post(() -> {
+                alarmCountdownTimer = new CountDownTimer(minutes * 60L * 1000L, 1000) {
+                    @Override
+                    public void onFinish() {
+                        hideAlarmtime(); // hide time once alarm triggers
+                    }
+
+                    @SuppressLint("DefaultLocale")
+                    @Override
+                    public void onTick(long millisUntilFinished) { // keep counting down every second
+                        long hour = (millisUntilFinished / 3600000) % 24;
+                        long min = (millisUntilFinished / 60000) % 60;
+                        long sec = (millisUntilFinished / 1000) % 60;
+
+                        if (alarmCountdownText != null) {
+                            alarmCountdownText.setText(String.format("%02d:%02d:%02d", hour, min, sec));
+                        }
+                    }
+                }.start();
+            });
 
             // OUTPUT: show result in log, return true if able to set alarm
             System.out.println("TaskController - Alarm set for " + minutes + " minutes from now");
@@ -453,16 +501,6 @@ public final class TaskController {
     // ------------------------------- HANDLE UI CHANGES -------------------------------
 
     /**
-     * Associate the music controls layout with a Linear Layout contained
-     *
-     * @param layout - the Linear Layout containing the music control buttons;
-     *               received from MainActivity.java
-     */
-    public void setMusicControlsLayout (LinearLayout layout) {
-        this.musicControlsLayout = layout;
-    }
-
-    /**
      * Set the layout to VISIBLE
      */
     private void showMusicControls() {
@@ -487,14 +525,6 @@ public final class TaskController {
     }
 
     /**
-     * Associate the Play/Resume music button with an ImageButton
-     * @param button - the Image Button used to control playing and resuming music
-     */
-    public void setPlayResumeMusicButton (ImageButton button) {
-        this.playResumeMusicButton = button;
-    }
-
-    /**
      * Change the play/resume button icon based on whether music is being played or not
      *
      * @param button - the Image Button used to control playing and resuming music
@@ -507,6 +537,27 @@ public final class TaskController {
     }
 
     /**
+     * Shows the alarm time when an alarm has been set
+     */
+    public void showAlarmTime() {
+        // runs on the main thread
+        new android.os.Handler(context.getMainLooper()).post(() -> {
+            alarmCountdownText.setVisibility(View.VISIBLE);
+        });
+    }
+
+    /**
+     * Hides the alarm time once an alarm has gone off
+     */
+    public void hideAlarmtime() {
+        // runs on the main thread
+        new android.os.Handler(context.getMainLooper()).post(() -> {
+            alarmCountdownText.setVisibility(View.GONE);
+        });
+    }
+
+    // ------------------------------- HELPER FUNCTION -------------------------------
+    /**
      * Check if music is currently being played
      *
      * @return true if music is playing, false otherwise
@@ -514,5 +565,4 @@ public final class TaskController {
     public boolean isMusicPlaying() {
         return mediaPlayer != null && mediaPlayer.isPlaying();
     }
-
 }
