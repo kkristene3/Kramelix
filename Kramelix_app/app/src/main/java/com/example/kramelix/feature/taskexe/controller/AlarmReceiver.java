@@ -3,7 +3,6 @@ package com.example.kramelix.feature.taskexe.controller;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.media.MediaPlayer;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -16,17 +15,18 @@ import android.widget.Toast;
  * It performs a scheduled task in delivering a "time-up" message when an alarm is to go off.
  *
  * @author Kristen Duong
+ * @noinspection PublicConstructor
  * @since 1.0
  */
 public class AlarmReceiver extends BroadcastReceiver {
 
     @Override
-    public void onReceive(Context context, Intent intent) {
+    public final void onReceive(Context context, Intent intent) {
         try {
 
             // PROCESS: get location of device's ringtone
             Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-            if (alarmUri == null) {
+            if (null == alarmUri) {
                 alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION); // use the default notification sound if a ringtone does not exist
             }
 
@@ -49,8 +49,11 @@ public class AlarmReceiver extends BroadcastReceiver {
                 }
             }, 8000);
 
-        } catch (Exception e) { // error-handling
+        } catch (RuntimeException e) { // error-handling
+            // TODO: add better error-handling here
+            //noinspection CallToPrintStackTrace
             e.printStackTrace();
         }
     }
+
 }
