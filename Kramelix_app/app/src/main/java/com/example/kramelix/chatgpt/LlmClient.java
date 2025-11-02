@@ -140,6 +140,9 @@ public final class LlmClient {
         }
 
         // OUTPUT: returning the response as a String
+        if (respParts.length==1){
+            return respParts[0];
+        }
         return respParts[1];
 
     }

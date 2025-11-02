@@ -7,7 +7,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
+import android.media.MediaMetadataRetriever;
 import android.os.SystemClock;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -19,6 +21,11 @@ import android.widget.LinearLayout;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 
 import com.example.kramelix.R;
@@ -171,6 +178,22 @@ public final class TaskController {
             }
         }
 
+        //Task: Play Music based on an Artist
+        else if (task.contains("playMusicArtist(")){
+            String[] taskParams = getParams(task);
+            if (taskParams.length == 1){
+                return playMusicArtist(taskParams[0]);
+            }
+        }
+
+        //Task: Play Music based on a Genre
+        else if (task.contains("playMusicGenre(")){
+            String[] taskParams=  getParams(task);
+            if (taskParams.length == 1){
+                return playMusicGenre(taskParams[0]);
+            }
+        }
+
         // Task: Set an Alarm
         else if (task.contains("setAlarm(")) {
 
@@ -184,22 +207,6 @@ public final class TaskController {
             }
 
         }
-
-        /*else if (task.contains("call(")){
-
-        }
-
-        else if (task.contains("text(")){
-
-        }
-
-        else if (task.contains("searchUp(")){
-
-        }
-
-        else if (task.contains("openCamera")){
-            System.out.println("openCamera");
-        }*/
 
         // if none of the above was fulfilled, that means that a task was not requested
         return true;
@@ -281,6 +288,42 @@ public final class TaskController {
             System.out.println("TaskController - Runtime, failed to play music: " + e);
             return false;
         }
+    }
+
+    /**
+     * Function for playing a song based on a given artist
+     *
+     * @param artist The artist of the song to play
+     * @return Boolean representing the success of the music playing. Success = true, any error (including unable to find song) is false
+     */
+    private boolean playMusicArtist(String artist){
+        String song = getMusicBasedOnMetadata("Artist", artist);
+        if (song != null){
+            playMusic(song);
+        }
+        //TODO error handle the songs we can't find =(
+        else{
+            System.out.println("couldn't find song =(");
+        }
+        return true;
+    }
+
+    /**
+     * Function for playing a song based on a given genre
+     *
+     * @param genre The genre of the song to play
+     * @return Boolean representing the success of the music playing. Success = true, any error (including unable to find song) is false
+     */
+    private boolean playMusicGenre(String genre){
+        String song = getMusicBasedOnMetadata("Genre", genre);
+        if (song != null){
+            playMusic(song);
+        }
+        //TODO error handle the songs we can't find =(
+        else{
+            System.out.println("couldn't find song =(");
+        }
+        return true;
     }
 
     /**
@@ -504,6 +547,104 @@ public final class TaskController {
             button.setImageResource(R.drawable.pause);
         else
             button.setImageResource(R.drawable.play);
+    }
+    /**
+     * Get the song title, artist or genre from the music file's metadata
+     *
+     * @param type - The type of metadata expected as a returned value
+     * @param data - The data that we want to choose a song based off
+     *
+     * @return string containing desired metadata info
+     * */
+    private String getMusicBasedOnMetadata(String type, String data){
+        //list of matching songs
+        List<String> songList = new ArrayList<>();
+
+        List<Integer> musicIds = getAllSongResourceIds(context);
+
+        for (int id:musicIds){
+            //create a new Metadata retriever
+            MediaMetadataRetriever meta = new MediaMetadataRetriever();
+            AssetFileDescriptor afd;
+            String songTitle = null;
+
+            try{
+                afd = context.getResources().openRawResourceFd(id);
+                songTitle = context.getResources().getResourceEntryName(id);
+                if (afd == null){
+                    continue;
+                }
+                //set the metadata object to the current file that we want to examine
+                meta.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+
+                //look for any artists in the f
+                if (type.equals("Artist")){
+                    String artist = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+
+                    if (artist != null && artist.toLowerCase().contains(data.toLowerCase())){
+                        if (songTitle!=null) {
+                            songList.add(songTitle);
+                        }
+                    }
+                }
+                if (type.equals("Genre")){
+                    String genre = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE);
+
+                    if (genre != null && genre.toLowerCase().contains(data.toLowerCase())){
+                        if (songTitle!=null) {
+                            songList.add(songTitle);
+                        }
+                    }
+                }
+                //close the created resources
+                try {
+                    meta.release();
+                    afd.close();
+                }
+                catch (Exception ignored) {}
+            }
+            catch (Exception e){
+                System.out.println("TaskController - Runtime, failed to find music file: " + e);
+            }
+        }
+        //turn the song list into an array for easier indexing
+        String[] iterableSongList = songList.toArray(new String[0]);
+
+        //if there is only one song that fits the requirements, return that song
+        if (iterableSongList.length == 1){
+            return iterableSongList[0];
+        }
+        //if there are no songs that fit the requirement, return null
+        else if (iterableSongList.length == 0){
+            return null;
+        }
+        //if there are multiple songs that fit the requirement, we must choose a random song to return
+        else{
+            int randomNum = (int)(Math.random() * iterableSongList.length);
+            return iterableSongList[randomNum];
+        }
+    }
+
+    /**
+     * Get the song title, artist or genre from the music file's metadata
+     *
+     * @param context - The current context of the app
+     *
+     * @return List<Integer> containing the list of music file ids
+     * */
+    private static List<Integer> getAllSongResourceIds(Context context){
+        List<Integer> ids = new ArrayList<>();
+        try{
+            Class<?> raw = Class.forName(context.getPackageName() + ".R$raw");
+            Field[] fields = raw.getDeclaredFields();
+            for (int i = 0; i<fields.length; i++){
+                ids.add(fields[i].getInt(null));
+            }
+        }
+        catch(Exception e){
+            System.out.println(e);
+        }
+        return ids;
     }
 
     /**
