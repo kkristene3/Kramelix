@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.media.MediaMetadataRetriever;
+import android.os.CountDownTimer;
 import android.os.SystemClock;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -17,6 +18,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -27,8 +29,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-
 import com.example.kramelix.R;
+
+import org.w3c.dom.Text;
+
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 /**
  * This controller executes user-requested device actions recognized by the LLM.
@@ -69,10 +75,12 @@ public final class TaskController {
     // -------------------- PLAY MUSIC VARIABLE --------------------
     MediaPlayer mediaPlayer;
     private int pausedTime;
-
     private MediaSessionCompat mediaSession;
-
     String songName;
+
+    // -------------------- ALARM COUNTDOWN TIMER --------------------
+    private CountDownTimer alarmCountdownTimer;
+
 
     // -------------------- NOTIFICATION CHANNEL --------------------
     private static final String CHANNEL_ID = "Media Channel";
@@ -81,8 +89,9 @@ public final class TaskController {
     // ----------------------------- UI -----------------------------
     private LinearLayout musicControlsLayout;
     private ImageButton playResumeMusicButton;
+    private TextView alarmCountdownText;
 
-    // ------------------------- LIFECYCLE -------------------------
+    // ----------------------------- LIFECYCLE -----------------------------
 
     /**
      * Constructor
@@ -147,9 +156,22 @@ public final class TaskController {
         });
 
         mediaSession.setActive(true); // indicate session is active
+    }
 
-        // PROCESS: create controller
-        MediaControllerCompat mediaController = new MediaControllerCompat(context, mediaSession.getSessionToken());
+    /**
+     * Associate the music controls layout with a Linear Layout container
+     * Associate the play/resume button with an Image button
+     * Associate the alarm countdown time with a TextView
+     *
+     * @param layout- the Linear Layout containing the music control buttons;
+     *              received from MainActivity.java
+     * @param playResumeMusicButton - the Image Button a user clicks to pause/resume music
+     * @param alarmCountdownText - the TextView showing the countdown for the alarm
+     */
+    public void setUIElements(LinearLayout layout, ImageButton playResumeMusicButton, TextView alarmCountdownText) {
+        this.musicControlsLayout = layout;
+        this.playResumeMusicButton = playResumeMusicButton;
+        this.alarmCountdownText = alarmCountdownText;
     }
 
     // ----------------------- EXECUTING TASKS -----------------------
@@ -263,7 +285,7 @@ public final class TaskController {
 
             // PROCESS: create and start music player
             mediaPlayer = MediaPlayer.create(context, resId);
-            mediaPlayer.setOnCompletionListener(mp -> stopMusic()); // TODO
+            mediaPlayer.setOnCompletionListener(mp -> stopMusic());
             mediaPlayer.start();
 
             // update UI -> show music controls
@@ -325,230 +347,8 @@ public final class TaskController {
         }
         return true;
     }
-
-    /**
-     * Function to pause music
-     */
-    public void pauseMusic() {
-        if (isMusicPlaying()) {
-            mediaPlayer.pause(); // pause song
-            pausedTime = mediaPlayer.getCurrentPosition(); // get time of song it was paused at
-            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED); // update playback state
-            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
-            System.out.println("TaskController - Music paused");
-        }
-    }
-
-    /**
-     * Function to resume music
-     */
-    public void resumeMusic() {
-        if (mediaPlayer != null) {
-            mediaPlayer.seekTo(pausedTime);
-            mediaPlayer.start(); // start playing song from where it was paused
-            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING); // update playback state
-            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
-            System.out.println("TaskController - Music resumed");
-        }
-    }
-
-    /**
-     * Function to stop playing music
-     */
-    public void stopMusic() {
-        // PROCESS: stop playing music if llm is currently playing music
-        if (null != mediaPlayer) {
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
-            }
-            mediaPlayer.release();
-            mediaPlayer = null;
-            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED); // update playback state
-            hideMusicControls(); // update UI -> hide music controls
-            System.out.println("TaskController - Music stopped");
-
-            // remove notification
-            notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.cancel(1);
-        }
-    }
-
-    /**
-     * This function will set the Playback state to the state given
-     *
-     * @param state - what playback state to set it to
-     */
-    private void updatePlaybackState(int state) {
-        PlaybackStateCompat.Builder builder = new PlaybackStateCompat.Builder()
-                .setActions(
-                        PlaybackStateCompat.ACTION_PLAY |
-                                PlaybackStateCompat.ACTION_PAUSE |
-                                PlaybackStateCompat.ACTION_STOP
-                )
-                .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f);
-        mediaSession.setPlaybackState(builder.build());
-    }
-
-    // ----------------------- TASK: SET ALARM -----------------------
-
-    /**
-     * Function that sets an alarm based on the time (minutes) given by user
-     *
-     * @param inputStr String representing for how long, in minutes, to set the alarm for
-     */
-    private boolean setAlarm(String inputStr) {
-        try {
-
-            // PROCESS: convert input string to int
-            //noinspection DynamicRegexReplaceableByCompiledPattern
-            String timeStr = inputStr.replaceAll("[^0-9]", ""); // keeps digits only
-            int minutes = Integer.parseInt(timeStr);
-
-            // PROCESS: calculate trigger time in milliseconds
-            long triggerAtMillis = SystemClock.elapsedRealtime() + (long) minutes * 60 * 1000;
-
-            // PROCESS: create alarm
-            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            Intent intent = new Intent(context, AlarmReceiver.class);
-            PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-            // FIXME OPTIMIZE: could probably remove the if-block here bc the SDK_INT is always >= 24
-            // PROCESS: set the alarm to go off at an exact time, regardless if phone is in low-power "idle" or "doze" mode.
-            // Check the Android version of device and set the alarm appropriately
-            if (android.os.Build.VERSION_CODES.M <= android.os.Build.VERSION.SDK_INT) { // for devices running Android's current version
-                alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                        triggerAtMillis,
-                        alarmIntent
-                );
-            } else { // for devices running old versions of Android
-                alarmManager.setExact(
-                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                        triggerAtMillis,
-                        alarmIntent
-                );
-            }
-
-            // OUTPUT: show result in log, return true if able to set alarm
-            System.out.println("TaskController - Alarm set for " + minutes + " minutes from now");
-            return true;
-
-        } catch (NumberFormatException e) {
-            System.out.println("TaskController - Number format, failed to set alarm: " + e);
-            return false;
-        } catch (RuntimeException e) { // error-handling
-            System.out.println("TaskController - Runtime, failed to set alarm: " + e);
-            return false;
-        }
-    }
-
-    // -------------------- NOTIFICATION CHANNEL --------------------
-
-    /**
-     * This function register the app's notification channel with the system
-     */
-    private void createNotificationChannel() {
-        // PROCESS: create the notification channel
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            CharSequence name = "Media Playback";
-            int importance = NotificationManager.IMPORTANCE_LOW;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            notificationManager = context.getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-
-    /**
-     * This function creates the notification to display
-     */
-    public void showNotification() {
-
-        // PROCESS: create a play/pause intent
-        Intent playPauseIntent = new Intent(context, MediaActionReceiver.class)
-                .setAction("ACTION_PLAY_PAUSE");
-        PendingIntent playPausePendingIntent = PendingIntent.getBroadcast(
-                context,
-                0,
-                playPauseIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
-        // PROCESS: build notification
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.kramelix_logo) // FIXME: this could later be changed to the song's album cover (if there's time)
-                .setContentTitle("Now Playing...")
-                .setContentText(songName)
-                .setOnlyAlertOnce(true)
-                .setOngoing(true)
-                .setStyle(new MediaStyle()
-                        .setMediaSession(mediaSession.getSessionToken())
-                        .setShowActionsInCompactView(0)) // 0 = play/pause
-                .addAction(new NotificationCompat.Action(
-                        R.drawable.play, "Play/Pause", playPausePendingIntent // index 0
-                ));
-
-        // PROCESS: get the system's notification center and post the notification
-        android.app.NotificationManager notificationManager =
-                (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(1, builder.build());
-    }
-
-    // ------------------------------- HANDLE UI CHANGES -------------------------------
-
-    /**
-     * Associate the music controls layout with a Linear Layout contained
-     *
-     * @param layout - the Linear Layout containing the music control buttons;
-     *               received from MainActivity.java
-     */
-    public void setMusicControlsLayout (LinearLayout layout) {
-        this.musicControlsLayout = layout;
-    }
-
-    /**
-     * Set the layout to VISIBLE
-     */
-    private void showMusicControls() {
-        if (musicControlsLayout != null) {
-            // runs on the main thread
-            new android.os.Handler(context.getMainLooper()).post(() -> {
-                musicControlsLayout.setVisibility(View.VISIBLE);
-            });
-        }
-    }
-
-    /**
-     * Set the layout to INVISIBLE
-     */
-    private void hideMusicControls() {
-        if (musicControlsLayout != null) {
-            // runs on the main thread
-            new android.os.Handler(context.getMainLooper()).post(() -> {
-                musicControlsLayout.setVisibility(View.INVISIBLE);
-            });
-        }
-    }
-
-    /**
-     * Associate the Play/Resume music button with an ImageButton
-     * @param button - the Image Button used to control playing and resuming music
-     */
-    public void setPlayResumeMusicButton (ImageButton button) {
-        this.playResumeMusicButton = button;
-    }
-
-    /**
-     * Change the play/resume button icon based on whether music is being played or not
-     *
-     * @param button - the Image Button used to control playing and resuming music
-     */
-    private void switchPlayResumeMusicIcon (ImageButton button) {
-        if (isMusicPlaying())
-            button.setImageResource(R.drawable.pause);
-        else
-            button.setImageResource(R.drawable.play);
-    }
-    /**
+  
+      /**
      * Get the song title, artist or genre from the music file's metadata
      *
      * @param type - The type of metadata expected as a returned value
@@ -648,6 +448,257 @@ public final class TaskController {
     }
 
     /**
+     * Function to pause music
+     */
+    public void pauseMusic() {
+        if (isMusicPlaying()) {
+            mediaPlayer.pause(); // pause song
+            pausedTime = mediaPlayer.getCurrentPosition(); // get time of song it was paused at
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED); // update playback state
+            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
+            System.out.println("TaskController - Music paused");
+        }
+    }
+
+    /**
+     * Function to resume music
+     */
+    public void resumeMusic() {
+        if (mediaPlayer != null) {
+            mediaPlayer.seekTo(pausedTime);
+            mediaPlayer.start(); // start playing song from where it was paused
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING); // update playback state
+            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
+            System.out.println("TaskController - Music resumed");
+        }
+    }
+
+    /**
+     * Function to stop playing music
+     */
+    public void stopMusic() {
+        // PROCESS: stop playing music if llm is currently playing music
+        if (null != mediaPlayer) {
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.stop();
+            }
+            mediaPlayer.release();
+            mediaPlayer = null;
+            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED); // update playback state
+            hideMusicControls(); // update UI -> hide music controls
+            System.out.println("TaskController - Music stopped");
+
+            // remove notification
+            notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(1);
+        }
+    }
+
+    /**
+     * This function will set the Playback state to the state given
+     *
+     * @param state - what playback state to set it to
+     */
+    private void updatePlaybackState(int state) {
+        PlaybackStateCompat.Builder builder = new PlaybackStateCompat.Builder()
+                .setActions(
+                        PlaybackStateCompat.ACTION_PLAY |
+                                PlaybackStateCompat.ACTION_PAUSE |
+                                PlaybackStateCompat.ACTION_STOP
+                )
+                .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f);
+        mediaSession.setPlaybackState(builder.build());
+    }
+
+    // ----------------------- TASK: SET ALARM -----------------------
+
+    /**
+     * Function that sets an alarm based on the time (minutes) given by user
+     *
+     * @param inputStr String representing for how long, in minutes, to set the alarm for
+     */
+    private boolean setAlarm(String inputStr) {
+        try {
+
+            // PROCESS: convert input string to int
+            // noinspection DynamicRegexReplaceableByCompiledPattern
+            String timeStr = inputStr.replaceAll("[^0-9]", ""); // keeps digits only
+            int minutes = Integer.parseInt(timeStr);
+
+            // PROCESS: calculate trigger time in milliseconds
+            long triggerAtMillis = SystemClock.elapsedRealtime() + (long) minutes * 60 * 1000;
+
+            // PROCESS: create alarm
+            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            Intent intent = new Intent(context, AlarmReceiver.class);
+            PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            // FIXME OPTIMIZE: could probably remove the if-block here bc the SDK_INT is always >= 24
+            // PROCESS: set the alarm to go off at an exact time, regardless if phone is in low-power "idle" or "doze" mode.
+            // Check the Android version of device and set the alarm appropriately
+            if (android.os.Build.VERSION_CODES.M <= android.os.Build.VERSION.SDK_INT) { // for devices running Android's current version
+                alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                        triggerAtMillis,
+                        alarmIntent
+                );
+            } else { // for devices running old versions of Android
+                alarmManager.setExact(
+                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                        triggerAtMillis,
+                        alarmIntent
+                );
+            }
+
+            // show countdown
+            showAlarmTime();
+
+            // create countdown on main (UI) thread
+            new android.os.Handler(context.getMainLooper()).post(() -> {
+                alarmCountdownTimer = new CountDownTimer(minutes * 60L * 1000L, 1000) {
+                    @Override
+                    public void onFinish() {
+                        hideAlarmtime(); // hide time once alarm triggers
+                    }
+
+                    @SuppressLint("DefaultLocale")
+                    @Override
+                    public void onTick(long millisUntilFinished) { // keep counting down every second
+                        long hour = (millisUntilFinished / 3600000) % 24;
+                        long min = (millisUntilFinished / 60000) % 60;
+                        long sec = (millisUntilFinished / 1000) % 60;
+
+                        if (alarmCountdownText != null) {
+                            alarmCountdownText.setText(String.format("%02d:%02d:%02d", hour, min, sec));
+                        }
+                    }
+                }.start();
+            });
+
+            // OUTPUT: show result in log, return true if able to set alarm
+            System.out.println("TaskController - Alarm set for " + minutes + " minutes from now");
+            return true;
+
+        } catch (NumberFormatException e) {
+            System.out.println("TaskController - Number format, failed to set alarm: " + e);
+            return false;
+        } catch (RuntimeException e) { // error-handling
+            System.out.println("TaskController - Runtime, failed to set alarm: " + e);
+            return false;
+        }
+    }
+
+    // -------------------- NOTIFICATION CHANNEL --------------------
+
+    /**
+     * This function register the app's notification channel with the system
+     */
+    private void createNotificationChannel() {
+        // PROCESS: create the notification channel
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            CharSequence name = "Media Playback";
+            int importance = NotificationManager.IMPORTANCE_LOW;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            notificationManager = context.getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    /**
+     * This function creates the notification to display
+     */
+    public void showNotification() {
+
+        // PROCESS: create a play/pause intent
+        Intent playPauseIntent = new Intent(context, MediaActionReceiver.class)
+                .setAction("ACTION_PLAY_PAUSE");
+        PendingIntent playPausePendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                playPauseIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // PROCESS: build notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.kramelix_logo) // FIXME: this could later be changed to the song's album cover (if there's time)
+                .setContentTitle("Now Playing...")
+                .setContentText(songName)
+                .setOnlyAlertOnce(true)
+                .setOngoing(true)
+                .setStyle(new MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken())
+                        .setShowActionsInCompactView(0)) // 0 = play/pause
+                .addAction(new NotificationCompat.Action(
+                        R.drawable.play, "Play/Pause", playPausePendingIntent // index 0
+                ));
+
+        // PROCESS: get the system's notification center and post the notification
+        android.app.NotificationManager notificationManager =
+                (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(1, builder.build());
+    }
+
+    // ------------------------------- HANDLE UI CHANGES -------------------------------
+
+    /**
+     * Set the layout to VISIBLE
+     */
+    private void showMusicControls() {
+        if (musicControlsLayout != null) {
+            // runs on the main thread
+            new android.os.Handler(context.getMainLooper()).post(() -> {
+                musicControlsLayout.setVisibility(View.VISIBLE);
+            });
+        }
+    }
+
+    /**
+     * Set the layout to INVISIBLE
+     */
+    private void hideMusicControls() {
+        if (musicControlsLayout != null) {
+            // runs on the main thread
+            new android.os.Handler(context.getMainLooper()).post(() -> {
+                musicControlsLayout.setVisibility(View.INVISIBLE);
+            });
+        }
+    }
+
+    /**
+     * Change the play/resume button icon based on whether music is being played or not
+     *
+     * @param button - the Image Button used to control playing and resuming music
+     */
+    private void switchPlayResumeMusicIcon (ImageButton button) {
+        if (isMusicPlaying())
+            button.setImageResource(R.drawable.pause);
+        else
+            button.setImageResource(R.drawable.play);
+    }
+
+    /**
+     * Shows the alarm time when an alarm has been set
+     */
+    public void showAlarmTime() {
+        // runs on the main thread
+        new android.os.Handler(context.getMainLooper()).post(() -> {
+            alarmCountdownText.setVisibility(View.VISIBLE);
+        });
+    }
+
+    /**
+     * Hides the alarm time once an alarm has gone off
+     */
+    public void hideAlarmtime() {
+        // runs on the main thread
+        new android.os.Handler(context.getMainLooper()).post(() -> {
+            alarmCountdownText.setVisibility(View.GONE);
+        });
+    }
+
+    // ------------------------------- HELPER FUNCTION -------------------------------
+    /**
      * Check if music is currently being played
      *
      * @return true if music is playing, false otherwise
@@ -655,5 +706,4 @@ public final class TaskController {
     public boolean isMusicPlaying() {
         return mediaPlayer != null && mediaPlayer.isPlaying();
     }
-
 }

@@ -104,8 +104,8 @@ public final class RecordController {
      */
     public void startRecording(@NonNull File wavOut) throws IOException {
 
-        // PROCESS: pause any music if playing
-        taskExe.pauseMusic();
+        // PROCESS: stop any music if playing
+        taskExe.stopMusic();
 
         // PROCESS: having PCM record run writher thread internally
         recorder.start(wavOut);

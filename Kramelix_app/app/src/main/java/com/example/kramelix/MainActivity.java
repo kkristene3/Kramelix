@@ -79,6 +79,7 @@ public final class MainActivity extends AppCompatActivity {
     private LinearLayout musicControlsLayout;
     private ImageButton playResumeMusicButton;
     private ImageButton stopMusicButton;
+    private TextView alarmCountdownText;
 
     // -------------------- CONTROLLERS --------------------
     private ChatController chatController;
@@ -138,6 +139,7 @@ public final class MainActivity extends AppCompatActivity {
         musicControlsLayout = findViewById(R.id.musicControlsLayout);
         playResumeMusicButton = findViewById(R.id.playResumeMusicButton);
         stopMusicButton = findViewById(R.id.stopMusicButton);
+        alarmCountdownText = findViewById(R.id.alarmCountdownText);
 
         // VARIABLE DECLARATION: prepare the session's WAV path (e.g. <app>/files/Music/recording.wav)
         wavPath = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "recording.wav");
@@ -163,8 +165,7 @@ public final class MainActivity extends AppCompatActivity {
         taskController = TaskController.getInstance(this);
 
         // PROCESS: send elements to TaskController to enable UI updates
-        taskController.setMusicControlsLayout(musicControlsLayout);
-        taskController.setPlayResumeMusicButton(playResumeMusicButton);
+        taskController.setUIElements(musicControlsLayout, playResumeMusicButton, alarmCountdownText);
     }
 
     // -------------------- MODEL INIT --------------------
