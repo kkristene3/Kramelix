@@ -77,6 +77,8 @@ public final class TaskController {
     private int pausedTime;
     private MediaSessionCompat mediaSession;
     String songName;
+    String songReadableName;
+    String songArtist;
 
     // -------------------- ALARM COUNTDOWN TIMER --------------------
     private CountDownTimer alarmCountdownTimer;
@@ -254,7 +256,25 @@ public final class TaskController {
      */
     private boolean playMusic(String song, String artist) {
         System.out.println("Song: " + song + ", Artist: " + artist);
-        return playMusic(song);
+
+        // PROCESS: ensure song name is readable by AndroidStudio
+        String tempSongName = song.trim().toLowerCase().replace(" ", "_");
+
+        // PROCESS: get resource ID (music file)
+        @SuppressLint("DiscouragedApi") int resId = context.getResources().getIdentifier(tempSongName, "raw", context.getPackageName());
+
+        // PROCESS: if cannot find song in folder
+        if (0 == resId) {
+            System.out.println("TaskController - Song not found in res/raw: " + tempSongName);
+            return false;
+        }
+        //PROCESS: verify if the artist is correct
+        String artistMeta = getSongMetadata("Artist", resId);
+        if (artistMeta != null && artistMeta.toLowerCase().contains(artist.toLowerCase().trim())){
+            return playMusic(song);
+        }
+        System.out.println("Song artist doesn't match given artist" + artist);
+        return false;
     }
 
     /**
@@ -281,6 +301,17 @@ public final class TaskController {
             if (0 == resId) {
                 System.out.println("TaskController - Song not found in res/raw: " + songName);
                 return false;
+            }
+
+            // PROCESS: Get the readable song title
+            songReadableName = getSongMetadata("Title", resId);
+            if (songReadableName == null || song.equals("")){
+                songReadableName = songName;
+            }
+
+            songArtist = getSongMetadata("Artist", resId);
+            if (songArtist == null || songArtist.equals("")){
+                songArtist = "Unknown";
             }
 
             // PROCESS: create and start music player
@@ -321,13 +352,13 @@ public final class TaskController {
     private boolean playMusicArtist(String artist){
         String song = getMusicBasedOnMetadata("Artist", artist);
         if (song != null){
-            playMusic(song);
+            return playMusic(song);
         }
         //TODO error handle the songs we can't find =(
         else{
             System.out.println("couldn't find song =(");
+            return false;
         }
-        return true;
     }
 
     /**
@@ -339,28 +370,28 @@ public final class TaskController {
     private boolean playMusicGenre(String genre){
         String song = getMusicBasedOnMetadata("Genre", genre);
         if (song != null){
-            playMusic(song);
+            return playMusic(song);
         }
         //TODO error handle the songs we can't find =(
         else{
             System.out.println("couldn't find song =(");
+            return false;
         }
-        return true;
     }
   
       /**
-     * Get the song title, artist or genre from the music file's metadata
+     * Function that chooses a song based on a given metadata value
      *
-     * @param type - The type of metadata expected as a returned value
-     * @param data - The data that we want to choose a song based off
+     * @param type - The type of metadata to find and use ("Artist" or "Genre")
+     * @param data - The data that we want to choose a song based off (Name of the artist or genre)
      *
-     * @return string containing desired metadata info
+     * @return string containing the title of the chosen song
      * */
     private String getMusicBasedOnMetadata(String type, String data){
         //list of matching songs
         List<String> songList = new ArrayList<>();
 
-        List<Integer> musicIds = getAllSongResourceIds(context);
+        List<Integer> musicIds = getAllSongResourceIds();
 
         for (int id:musicIds){
             //create a new Metadata retriever
@@ -424,15 +455,48 @@ public final class TaskController {
             return iterableSongList[randomNum];
         }
     }
+    /**
+     * Function that returns the desired metadata for a specific mp3 file ID
+     *
+     * @param type - The type of metadata to grab (Artist or Title)
+     * @param id - The ID for the mp3 file of the chosen song
+     *
+     * @return String - The metadata
+     * */
+    private String getSongMetadata(String type, int id){
+        //create a new Metadata retriever
+        MediaMetadataRetriever meta = new MediaMetadataRetriever();
+        AssetFileDescriptor afd;
+
+        try{
+            afd = context.getResources().openRawResourceFd(id);
+            if (afd == null){
+                return null;
+            }
+
+            meta.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+
+            if (type.equals("Artist")) {
+                return meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+            }
+            else if (type.equals("Title")){
+                return meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+            }
+
+        }
+        catch (Exception e){
+            System.out.println(e);
+        }
+        return null;
+
+    }
 
     /**
      * Get the song title, artist or genre from the music file's metadata
      *
-     * @param context - The current context of the app
-     *
      * @return List<Integer> containing the list of music file ids
      * */
-    private static List<Integer> getAllSongResourceIds(Context context){
+    private List<Integer> getAllSongResourceIds(){
         List<Integer> ids = new ArrayList<>();
         try{
             Class<?> raw = Class.forName(context.getPackageName() + ".R$raw");
@@ -622,8 +686,8 @@ public final class TaskController {
         // PROCESS: build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.kramelix_logo) // FIXME: this could later be changed to the song's album cover (if there's time)
-                .setContentTitle("Now Playing...")
-                .setContentText(songName)
+                .setContentTitle(songReadableName)
+                .setContentText(songArtist)
                 .setOnlyAlertOnce(true)
                 .setOngoing(true)
                 .setStyle(new MediaStyle()
