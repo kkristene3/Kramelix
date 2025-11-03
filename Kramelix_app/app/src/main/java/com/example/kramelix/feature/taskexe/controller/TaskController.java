@@ -21,10 +21,10 @@ import androidx.annotation.NonNull;
  * <br>
  * <strong>Responsibilities</strong>
  * <ul>
- *     <li>Own a lightweight registry of supported tasks (e.g. music playback, alarms).</li>
- *     <li>Parse task command strings and dispatch to the correct implementation.</li>
- *     <li>Manage system resources such as {@link android.media.MediaPlayer} safely.</li>
- *     <li>Serve as the feature-level extension point for future “assistant-like” abilities.</li>
+ *     <li>Owns a lightweight registry of supported tasks (e.g. music playback, alarms).</li>
+ *     <li>Parses task command strings and dispatch to the correct implementation.</li>
+ *     <li>Manages system resources such as {@link android.media.MediaPlayer} safely.</li>
+ *     <li>Serves as the feature-level extension point for future "assistant-like" abilities.</li>
  * </ul>
  *
  * <br>
@@ -36,7 +36,7 @@ import androidx.annotation.NonNull;
  *     <li>Unknown or unsupported task strings must fail gracefully without side effects.</li>
  * </ul>
  *
- * @author Alex Oprea, Kristen Duong
+ * @author Alex Oprea, Kristen Duong, Amy Huang
  * @noinspection BooleanMethodNameMustStartWithQuestion, Singleton
  * @since 1.0
  */
@@ -54,17 +54,18 @@ public final class TaskController {
     /**
      * Constructor
      *
-     * @param context Any valid {@link Context}; the application context will be retained.
+     * @param context Current valid {@link Context}.
      */
     private TaskController(@NonNull Context context) {
-        this.context = context.getApplicationContext();
+        // AMY'S NOTE: keep context as-is!!! DON'T convert to App context
+        this.context = context;
     }
 
     /**
      * The public "gateway" to access the TaskController object
      * Creates a new object on the first call, afterwards, the pre-existing instance is returned
      *
-     * @param context Any valid {@link Context}; the application context will be retained.
+     * @param context Current valid {@link Context}.
      * @return the shared TaskController instance
      */
     public static synchronized TaskController getInstance(@NonNull Context context) {
@@ -99,10 +100,7 @@ public final class TaskController {
             else if (1 == taskParams.length) {
                 return playMusic(taskParams[0]);
             }
-        }
-
-        // Task: Set an Alarm
-        else if (task.contains("setAlarm(")) {
+        } else if (task.contains("setAlarm(")) { // task: Set an Alarm
 
             // extract the parameters from the string
             String[] taskParams = getParams(task);
@@ -113,12 +111,42 @@ public final class TaskController {
                 return setAlarm(taskParams[0]);
             }
 
+        } else if (task.contains("call(")) { // task: call
+
+            // VARIABLE DECLARATION: extracting the parameters from the string
+            String[] params = getParams(task);
+
+            if (1 == params.length) {
+
+                // PROCESS: trimming the request & sending to CallController
+                String target = params[0].trim();
+                CallController callController = CallController.getInstance(context);
+
+                return callController.handleCallRequest(target);
+
+            }
+
+        } else if (task.contains("confirm(")) { // task: confirm a contact name
+
+            // VARIABLE DECLARATION: extracting the parameters from the string
+            String[] params = getParams(task);
+
+            if (1 == params.length) {
+
+                // PROCESS: trimming the request
+                String ambiguous = params[0].trim();
+
+                System.out.println("TaskController - Confirmation needed for: " + ambiguous);
+
+                // OUTPUT: intentionally NOT calling anyone here; UI will prompt the user again
+                return true;
+
+            }
+
         }
 
-        /*else if (task.contains("call(")){
 
-        }
-
+        /*
         else if (task.contains("text(")){
 
         }
@@ -138,7 +166,7 @@ public final class TaskController {
     // ----------------------- TASK PARAMETER -----------------------
     private static String[] getParams(String text) {
         // get the parameters between the ()
-        String taskParams = text.substring(text.indexOf('(') + 1, text.length() - 2);
+        String taskParams = text.substring(text.indexOf('(') + 1, text.length() - 1);
 
         // separate the parameters into an array using the , delimiter
         return taskParams.split(",");
@@ -268,4 +296,5 @@ public final class TaskController {
             return false;
         }
     }
+
 }

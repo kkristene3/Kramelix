@@ -32,7 +32,7 @@ import java.io.InputStream;
 import java.io.SyncFailedException;
 
 /**
- * This class acts as the app's entry point: binds chat UI, handles mic permission, & delegates
+ * This class acts as the app's entry point: binds chat UI, handles app permissions, & delegates
  * recording, playback, transcription, LLM, and TTS to feature controllers.
  *
  * <p>MainActivity intentionally stays thin: it wires buttons & forwards
@@ -56,6 +56,11 @@ public final class MainActivity extends AppCompatActivity {
      * Permission request code for microphone recording.
      */
     private static final int REQ_AUDIO = 1001;
+
+    /**
+     * Permission request code for phone calling.
+     */
+    private static final int REQ_CALL = 2001;
 
     /**
      * Asset path to the Whisper model bundled with the app.
@@ -333,14 +338,57 @@ public final class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Permission callback: if granted and a record was pending, re-trigger the record button.
+     * This helper function checks whether phone call permission has been granted.
+     *
+     * @return {@code true} if permission has been granted; {@code false} otherwise.
+     */
+    private boolean hasCallPermission() {
+        return PackageManager.PERMISSION_GRANTED ==
+                ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE);
+    }
+
+    /**
+     * This helper function requests phone call permissions.
+     */
+    private void requestCallPermission() {
+        ActivityCompat.requestPermissions(
+                this,
+                new String[]{Manifest.permission.CALL_PHONE},
+                REQ_CALL
+        );
+    }
+
+    /**
+     * Public entry point used by TaskController to ensure call permission.
+     *
+     * @return {@code true} if permission is granted; {@code false} otherwise (and permission requested).
+     */
+    public boolean ensureCallPermission() {
+        if (hasCallPermission()) return true;
+
+        requestCallPermission();
+        return false;
+    }
+
+    /**
+     * Permission callback.
+     * AMY'S NOTE: if recording permissions granted and a recording was pending, re-trigger the record button.
+     *
+     * @param requestCode  The request code passed.
+     * @param permissions  The requested permissions. Never null.
+     * @param grantResults The grant results for the corresponding permissions,
+     *                     which is either {@link android.content.pm.PackageManager#PERMISSION_GRANTED}
+     *                     or {@link android.content.pm.PackageManager#PERMISSION_DENIED}. Never null.
      */
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
 
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (REQ_AUDIO == requestCode) {
+        // PROCESS: checking which permission is needed
+        if (REQ_AUDIO == requestCode) { // recording
 
             boolean granted = 0 < grantResults.length && PackageManager.PERMISSION_GRANTED == grantResults[0];
 
@@ -357,6 +405,19 @@ public final class MainActivity extends AppCompatActivity {
 
                 // OUTPUT: UX feedback
                 Toast.makeText(this, "Mic permission is required to record", Toast.LENGTH_LONG).show();
+            }
+
+        } else if (REQ_CALL == requestCode) { // calling
+
+            boolean granted = 0 < grantResults.length && PackageManager.PERMISSION_GRANTED == grantResults[0];
+
+            if (!granted) { // error-handling
+
+                // LOG OUTPUT:
+                Log.w(TAG, "Call permission denied by user.");
+
+                // OUTPUT: UX feedback
+                Toast.makeText(this, "Call permission required to place calls", Toast.LENGTH_LONG).show();
 
             }
 
