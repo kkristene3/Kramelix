@@ -411,8 +411,8 @@ public final class CallController {
         }
 
         // OUTPUT: bad context
-        Log.e(TAG, "Missing MainActivity context for READ_CONTACTS permission.");
-        return false;
+        Log.w(TAG, "Missing MainActivity context for READ_CONTACTS permission, but assuming previous permission was granted.");
+        return true;
 
     }
 

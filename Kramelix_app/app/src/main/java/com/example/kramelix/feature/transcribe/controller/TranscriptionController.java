@@ -18,8 +18,6 @@ import com.example.kramelix.feature.chat.model.Role;
 import com.example.kramelix.feature.taskexe.controller.CallController;
 import com.example.kramelix.whisperjni.Whisper;
 
-import org.json.JSONException;
-
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -239,6 +237,7 @@ public final class TranscriptionController {
                         Map<String, String> last = msgs.get(msgs.size() - 1);
 
                         if ("user".equalsIgnoreCase(last.get("role"))) {
+
                             String userText = Objects.requireNonNull(last.get("content")).toLowerCase();
 
                             // FIXME OPTIMIZE: there's definitely a better way to do this
@@ -279,8 +278,8 @@ public final class TranscriptionController {
                 // PROCESS: replacing ASSISTANT pending w/ final response
                 chat.update(assistantPending, safeResp, false);
 
-                // LOG OUTPUT:
-                Log.e(TAG, "Full conversation:" + chat.getConversationJson());
+//                // LOG OUTPUT:
+//                Log.e(TAG, "Full conversation:" + chat.getConversationJson());
 
                 // PROCESS: running TTS
                 if (!"[no response given]".equals(safeResp)) {
@@ -302,10 +301,11 @@ public final class TranscriptionController {
                 // TODO: add next steps for user
                 postToast("Transcription failed: " + e.getMessage());
 
-            } catch (JSONException e) {
-                // LOG OUTPUT:
-                Log.e(TAG, "Msgs couldn't serialize to JSON", e);
             }
+//            catch (JSONException e) {
+//                // LOG OUTPUT:
+//                Log.e(TAG, "Msgs couldn't serialize to JSON", e);
+//            }
 
         }, THREAD_NAME).start();
 
