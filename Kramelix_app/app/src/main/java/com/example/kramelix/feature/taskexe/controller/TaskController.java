@@ -6,12 +6,9 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
-
-import com.example.kramelix.MainActivity;
 
 /**
  * This controller executes user-requested device actions recognized by the LLM.
@@ -24,10 +21,10 @@ import com.example.kramelix.MainActivity;
  * <br>
  * <strong>Responsibilities</strong>
  * <ul>
- *     <li>Own a lightweight registry of supported tasks (e.g. music playback, alarms).</li>
- *     <li>Parse task command strings and dispatch to the correct implementation.</li>
- *     <li>Manage system resources such as {@link android.media.MediaPlayer} safely.</li>
- *     <li>Serve as the feature-level extension point for future “assistant-like” abilities.</li>
+ *     <li>Owns a lightweight registry of supported tasks (e.g. music playback, alarms).</li>
+ *     <li>Parses task command strings and dispatch to the correct implementation.</li>
+ *     <li>Manages system resources such as {@link android.media.MediaPlayer} safely.</li>
+ *     <li>Serves as the feature-level extension point for future "assistant-like" abilities.</li>
  * </ul>
  *
  * <br>
@@ -114,24 +111,40 @@ public final class TaskController {
                 return setAlarm(taskParams[0]);
             }
 
-        } else if (task.contains("call(")) { // task: call a contact/number
+        } else if (task.contains("call(")) { // task: call
+
+            // VARIABLE DECLARATION: extracting the parameters from the string
             String[] params = getParams(task);
+
             if (1 == params.length) {
+
+                // PROCESS: trimming the request & sending to CallController
                 String target = params[0].trim();
+                CallController callController = CallController.getInstance(context);
 
-                // Request permission through Activity before executing
-                if (context instanceof MainActivity) {
-                    MainActivity activity = (MainActivity) context;
+                return callController.handleCallRequest(target);
 
-                    if (!activity.ensureCallPermission()) {
-                        // Permission requested → must stop here
-                        return false;
-                    }
-                }
-
-                return callNumber(target);
             }
+
+        } else if (task.contains("confirm(")) { // task: confirm a contact name
+
+            // VARIABLE DECLARATION: extracting the parameters from the string
+            String[] params = getParams(task);
+
+            if (1 == params.length) {
+
+                // PROCESS: trimming the request
+                String ambiguous = params[0].trim();
+
+                System.out.println("TaskController - Confirmation needed for: " + ambiguous);
+
+                // OUTPUT: intentionally NOT calling anyone here; UI will prompt the user again
+                return true;
+
+            }
+
         }
+
 
         /*
         else if (task.contains("text(")){
@@ -153,7 +166,7 @@ public final class TaskController {
     // ----------------------- TASK PARAMETER -----------------------
     private static String[] getParams(String text) {
         // get the parameters between the ()
-        String taskParams = text.substring(text.indexOf('(') + 1, text.length() - 2);
+        String taskParams = text.substring(text.indexOf('(') + 1, text.length() - 1);
 
         // separate the parameters into an array using the , delimiter
         return taskParams.split(",");
@@ -280,39 +293,6 @@ public final class TaskController {
             return false;
         } catch (RuntimeException e) { // error-handling
             System.out.println("TaskController - Runtime, failed to set alarm: " + e);
-            return false;
-        }
-    }
-
-    // ----------------------- TASK: CALL CONTACT/PHONE NUMBER -----------------------
-
-    private boolean callNumber(@NonNull String number) {
-        try {
-            // If permission is missing, ask MainActivity to request it
-            if (context instanceof MainActivity) {
-                MainActivity activity = (MainActivity) context;
-                if (!activity.ensureCallPermission()) {
-                    System.out.println("TaskController - Waiting for CALL_PHONE permission...");
-                    return false;  // stop here; will retry once permission is granted
-                }
-            } else {
-                System.out.println("TaskController - Missing MainActivity context");
-                return false;
-            }
-
-            // Basic cleanup
-            String clean = number.replaceAll("[^\\d+]", "");
-
-            Intent intent = new Intent(Intent.ACTION_CALL);
-            intent.setData(Uri.parse("tel:" + clean));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-            context.startActivity(intent);
-            System.out.println("TaskController - Calling " + clean);
-            return true;
-
-        } catch (RuntimeException e) {
-            System.out.println("TaskController - callNumber failed: " + e.getMessage());
             return false;
         }
     }
