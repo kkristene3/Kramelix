@@ -21,7 +21,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.kramelix.chatgpt.LlmClient;
 import com.example.kramelix.feature.chat.controller.ChatController;
 import com.example.kramelix.feature.record.controller.RecordController;
-import com.example.kramelix.feature.taskexe.controller.TaskController;
 import com.example.kramelix.feature.transcribe.controller.TranscriptionController;
 import com.example.kramelix.feature.tts.controller.TTSController;
 
@@ -85,7 +84,6 @@ public final class MainActivity extends AppCompatActivity {
     private TranscriptionController transcriptionController;
     private TTSController ttsController;
     private LlmClient llmClient;
-    private TaskController taskController;
 
     // -------------------- PATHS --------------------
     private File wavPath;
@@ -157,7 +155,6 @@ public final class MainActivity extends AppCompatActivity {
         llmClient = LlmClient.createLlmClient(this);
         ttsController = TTSController.getInstance(this);
         transcriptionController = TranscriptionController.getInstance(this, chatController, llmClient);
-        taskController = TaskController.getInstance(this);
 
     }
 
