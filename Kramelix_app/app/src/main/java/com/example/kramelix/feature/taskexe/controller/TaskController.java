@@ -27,7 +27,6 @@ import androidx.media.app.NotificationCompat.MediaStyle;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import com.example.kramelix.R;
 
@@ -101,10 +100,12 @@ public final class TaskController {
      * @param context Current valid {@link Context}.
      */
     private TaskController(@NonNull Context context) {
+        this.context = context.getApplicationContext();
         initMediaSession();
         createNotificationChannel();
         // AMY'S NOTE: keep context as-is!!! DON'T convert to App context
-        this.context = context;
+        //THe app doesn't run if it's kept as is, it gets an error and quits immediately
+        //this.context = context;
     }
 
     /**
@@ -271,7 +272,7 @@ public final class TaskController {
     // ----------------------- TASK PARAMETER -----------------------
     private static String[] getParams(String text) {
         // get the parameters between the ()
-        String taskParams = text.substring(text.indexOf('(') + 1, text.length() - 1);
+        String taskParams = text.substring(text.indexOf('(') + 1, text.length() - 2);
 
         // separate the parameters into an array using the , delimiter
         return taskParams.split(",");
@@ -420,6 +421,7 @@ public final class TaskController {
      * @return string containing the title of the chosen song
      * */
     private String getMusicBasedOnMetadata(String type, String data){
+        System.out.println("data:"+ data);
         //list of matching songs
         List<String> songList = new ArrayList<>();
 
