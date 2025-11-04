@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -21,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.kramelix.chatgpt.LlmClient;
 import com.example.kramelix.feature.chat.controller.ChatController;
 import com.example.kramelix.feature.record.controller.RecordController;
+import com.example.kramelix.feature.taskexe.controller.TaskController;
 import com.example.kramelix.feature.transcribe.controller.TranscriptionController;
 import com.example.kramelix.feature.tts.controller.TTSController;
 
@@ -30,6 +33,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SyncFailedException;
+
+import kotlinx.coroutines.scheduling.Task;
 
 /**
  * This class acts as the app's entry point: binds chat UI, handles app permissions, & delegates
@@ -73,10 +78,13 @@ public final class MainActivity extends AppCompatActivity {
     private static final String MODEL_DEST_NAME = "ggml-tiny.en.bin";
 
     // -------------------- UI --------------------
-    private ToggleButton recordButton;
-    private ToggleButton playRecButton;
-    private TextView recordText;
     private RecyclerView chatRecycler;
+    private ToggleButton recordButton;
+    private TextView recordText;
+    private LinearLayout musicControlsLayout;
+    private ImageButton playResumeMusicButton;
+    private ImageButton stopMusicButton;
+    private TextView alarmCountdownText;
 
     // -------------------- CONTROLLERS --------------------
     private ChatController chatController;
@@ -84,6 +92,7 @@ public final class MainActivity extends AppCompatActivity {
     private TranscriptionController transcriptionController;
     private TTSController ttsController;
     private LlmClient llmClient;
+    private TaskController taskController;
 
     // -------------------- PATHS --------------------
     private File wavPath;
@@ -129,10 +138,13 @@ public final class MainActivity extends AppCompatActivity {
     private void bindUi() {
 
         // VARIABLE DECLARATION: view bindings
-        recordButton = findViewById(R.id.recordButton);
-        playRecButton = findViewById(R.id.playRecButton);
-        recordText = findViewById(R.id.recordText);
         chatRecycler = findViewById(R.id.chatRecycler);
+        recordButton = findViewById(R.id.recordButton);
+        recordText = findViewById(R.id.recordText);
+        musicControlsLayout = findViewById(R.id.musicControlsLayout);
+        playResumeMusicButton = findViewById(R.id.playResumeMusicButton);
+        stopMusicButton = findViewById(R.id.stopMusicButton);
+        alarmCountdownText = findViewById(R.id.alarmCountdownText);
 
         // VARIABLE DECLARATION: prepare the session's WAV path (e.g. <app>/files/Music/recording.wav)
         wavPath = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "recording.wav");
@@ -155,7 +167,10 @@ public final class MainActivity extends AppCompatActivity {
         llmClient = LlmClient.createLlmClient(this);
         ttsController = TTSController.getInstance(this);
         transcriptionController = TranscriptionController.getInstance(this, chatController, llmClient);
+        taskController = TaskController.getInstance(this);
 
+        // PROCESS: send elements to TaskController to enable UI updates
+        taskController.setUIElements(musicControlsLayout, playResumeMusicButton, alarmCountdownText);
     }
 
     // -------------------- MODEL INIT --------------------
@@ -191,11 +206,24 @@ public final class MainActivity extends AppCompatActivity {
     // -------------------- BUTTON HANDLERS --------------------
 
     /**
-     * This function wires click listeners for record/play buttons.
+     * This function wires click listeners for record button.
      */
     private void setupButtons() {
         recordButton.setOnClickListener(v -> onRecordToggled(recordButton.isChecked()));
-        playRecButton.setOnClickListener(v -> onPlayToggled(playRecButton.isChecked()));
+
+        // set play/resume music button listener
+        playResumeMusicButton.setOnClickListener(v -> {
+            if (taskController.isMusicPlaying()) {
+                taskController.pauseMusic();
+            } else {
+                taskController.resumeMusic();
+            }
+        });
+
+        // set stop music button listener
+        stopMusicButton.setOnClickListener(v -> {
+            taskController.stopMusic();
+        });
     }
 
     /**
@@ -237,7 +265,7 @@ public final class MainActivity extends AppCompatActivity {
                 }
             } else {
 
-                // PROCESS: requesting permission & rmbring to record
+                // PROCESS: requesting permission & remembering to record
                 recordPendingAfterPermission = true;
 
                 ActivityCompat.requestPermissions(
@@ -291,36 +319,6 @@ public final class MainActivity extends AppCompatActivity {
                     ttsController::speak
             );
 
-        }
-
-    }
-
-    /**
-     * This function handles the play toggle and starts/stops local playback of the latest WAV.
-     *
-     * @param on whether the play toggle is on
-     */
-    private void onPlayToggled(boolean on) {
-
-        if (on) {
-
-            try {
-                recordController.startPlayback(wavPath);
-            } catch (IOException e) {
-                // LOG OUTPUT:
-                Log.e(TAG, "startPlayback failure (IO error)", e);
-            } catch (RuntimeException e) {
-
-                // LOG OUTPUT:
-                Log.e(TAG, "startPlayback failure (runtime exception", e);
-                playRecButton.setChecked(false); // updating UI
-
-                // OUTPUT: UX feedback
-                Toast.makeText(this, "Play failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-
-            }
-        } else {
-            recordController.stopPlayback();
         }
 
     }
