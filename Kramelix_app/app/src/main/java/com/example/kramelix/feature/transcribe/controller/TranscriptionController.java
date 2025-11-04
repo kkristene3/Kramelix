@@ -15,11 +15,13 @@ import com.example.kramelix.chatgpt.LlmClient;
 import com.example.kramelix.feature.chat.controller.ChatController;
 import com.example.kramelix.feature.chat.model.Message;
 import com.example.kramelix.feature.chat.model.Role;
+import com.example.kramelix.feature.taskexe.controller.CallController;
 import com.example.kramelix.whisperjni.Whisper;
 
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -225,6 +227,40 @@ public final class TranscriptionController {
 
                     // PROCESS: building msg system & trimmed history (excludes pending msgs)
                     List<Map<String, String>> msgs = chat.buildOpenAiMessages(null, CONTEXT_BUDGET_CHARS);
+
+                    // PROCESS: injecting contact list into LLM context if needed
+                    CallController callController = CallController.getInstance(ctx);
+                    List<String> contacts = callController.getAllContactNames();
+
+                    if (!msgs.isEmpty()) {
+
+                        Map<String, String> last = msgs.get(msgs.size() - 1);
+
+                        if ("user".equalsIgnoreCase(last.get("role"))) {
+
+                            String userText = Objects.requireNonNull(last.get("content")).toLowerCase();
+
+                            // FIXME OPTIMIZE: there's definitely a better way to do this
+                            // VARIABLE DECLARATION: recognizing intent to call
+                            boolean likelyCallIntent = userText.contains("call") || userText.contains("dial");
+
+                            if (likelyCallIntent && !contacts.isEmpty()
+                                    && !Objects.requireNonNull(last.get("content")).contains("Contacts on device:")) {
+
+                                // PROCESS: appending contact names for LLM to reason about
+                                String updatedContent = last.get("content") + "\nContacts on device: " + contacts;
+                                last.put("content", updatedContent);
+
+                                // LOG OUTPUT: debugging
+                                Log.i(TAG, "Injected contact list into LLM context: " + contacts);
+
+                            }
+
+                        }
+
+                    }
+
+                    // PROCESS: sending everything to LLM
                     llmText = llm.complete(BuildConfig.OPENAI_API_KEY, msgs);
 
                 } catch (RuntimeException e) { // error-handling
@@ -243,7 +279,7 @@ public final class TranscriptionController {
                 chat.update(assistantPending, safeResp, false);
 
 //                // LOG OUTPUT:
-//                Log.i(TAG, "Full conversation:" + chat.getConversationJson());
+//                Log.e(TAG, "Full conversation:" + chat.getConversationJson());
 
                 // PROCESS: running TTS
                 if (!"[no response given]".equals(safeResp)) {
