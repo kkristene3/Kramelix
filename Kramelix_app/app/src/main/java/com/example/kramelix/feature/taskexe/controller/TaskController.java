@@ -27,7 +27,6 @@ import androidx.media.app.NotificationCompat.MediaStyle;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import com.example.kramelix.R;
 
@@ -47,10 +46,10 @@ import java.text.NumberFormat;
  * <br>
  * <strong>Responsibilities</strong>
  * <ul>
- *     <li>Own a lightweight registry of supported tasks (e.g. music playback, alarms).</li>
- *     <li>Parse task command strings and dispatch to the correct implementation.</li>
- *     <li>Manage system resources such as {@link android.media.MediaPlayer} safely.</li>
- *     <li>Serve as the feature-level extension point for future “assistant-like” abilities.</li>
+ *     <li>Owns a lightweight registry of supported tasks (e.g. music playback, alarms).</li>
+ *     <li>Parses task command strings and dispatch to the correct implementation.</li>
+ *     <li>Manages system resources such as {@link android.media.MediaPlayer} safely.</li>
+ *     <li>Serves as the feature-level extension point for future "assistant-like" abilities.</li>
  * </ul>
  *
  * <br>
@@ -62,7 +61,7 @@ import java.text.NumberFormat;
  *     <li>Unknown or unsupported task strings must fail gracefully without side effects.</li>
  * </ul>
  *
- * @author Alex Oprea, Kristen Duong
+ * @author Alex Oprea, Kristen Duong, Amy Huang
  * @noinspection BooleanMethodNameMustStartWithQuestion, Singleton
  * @since 1.0
  */
@@ -77,6 +76,8 @@ public final class TaskController {
     private int pausedTime;
     private MediaSessionCompat mediaSession;
     String songName;
+    String songReadableName;
+    String songArtist;
 
     // -------------------- ALARM COUNTDOWN TIMER --------------------
     private CountDownTimer alarmCountdownTimer;
@@ -96,19 +97,22 @@ public final class TaskController {
     /**
      * Constructor
      *
-     * @param context Any valid {@link Context}; the application context will be retained.
+     * @param context Current valid {@link Context}.
      */
     private TaskController(@NonNull Context context) {
         this.context = context.getApplicationContext();
         initMediaSession();
         createNotificationChannel();
+        // AMY'S NOTE: keep context as-is!!! DON'T convert to App context
+        //THe app doesn't run if it's kept as is, it gets an error and quits immediately
+        //this.context = context;
     }
 
     /**
      * The public "gateway" to access the TaskController object
      * Creates a new object on the first call, afterwards, the pre-existing instance is returned
      *
-     * @param context Any valid {@link Context}; the application context will be retained.
+     * @param context Current valid {@link Context}.
      * @return the shared TaskController instance
      */
     public static synchronized TaskController getInstance(@NonNull Context context) {
@@ -216,8 +220,7 @@ public final class TaskController {
             }
         }
 
-        // Task: Set an Alarm
-        else if (task.contains("setAlarm(")) {
+        else if (task.contains("setAlarm(")) { // task: Set an Alarm
 
             // extract the parameters from the string
             String[] taskParams = getParams(task);
@@ -226,6 +229,38 @@ public final class TaskController {
             //  a user may want to set a timer using hours, or at an exact time; will have to adjust
             if (1 == taskParams.length) {
                 return setAlarm(taskParams[0]);
+            }
+
+        } else if (task.contains("call(")) { // task: call
+
+            // VARIABLE DECLARATION: extracting the parameters from the string
+            String[] params = getParams(task);
+
+            if (1 == params.length) {
+
+                // PROCESS: trimming the request & sending to CallController
+                String target = params[0].trim();
+                CallController callController = CallController.getInstance(context);
+
+                return callController.handleCallRequest(target);
+
+            }
+
+        } else if (task.contains("confirm(")) { // task: confirm a contact name
+
+            // VARIABLE DECLARATION: extracting the parameters from the string
+            String[] params = getParams(task);
+
+            if (1 == params.length) {
+
+                // PROCESS: trimming the request
+                String ambiguous = params[0].trim();
+
+                System.out.println("TaskController - Confirmation needed for: " + ambiguous);
+
+                // OUTPUT: intentionally NOT calling anyone here; UI will prompt the user again
+                return true;
+
             }
 
         }
@@ -254,7 +289,25 @@ public final class TaskController {
      */
     private boolean playMusic(String song, String artist) {
         System.out.println("Song: " + song + ", Artist: " + artist);
-        return playMusic(song);
+
+        // PROCESS: ensure song name is readable by AndroidStudio
+        String tempSongName = song.trim().toLowerCase().replace(" ", "_");
+
+        // PROCESS: get resource ID (music file)
+        @SuppressLint("DiscouragedApi") int resId = context.getResources().getIdentifier(tempSongName, "raw", context.getPackageName());
+
+        // PROCESS: if cannot find song in folder
+        if (0 == resId) {
+            System.out.println("TaskController - Song not found in res/raw: " + tempSongName);
+            return false;
+        }
+        //PROCESS: verify if the artist is correct
+        String artistMeta = getSongMetadata("Artist", resId);
+        if (artistMeta != null && artistMeta.toLowerCase().contains(artist.toLowerCase().trim())){
+            return playMusic(song);
+        }
+        System.out.println("Song artist doesn't match given artist" + artist);
+        return false;
     }
 
     /**
@@ -281,6 +334,17 @@ public final class TaskController {
             if (0 == resId) {
                 System.out.println("TaskController - Song not found in res/raw: " + songName);
                 return false;
+            }
+
+            // PROCESS: Get the readable song title
+            songReadableName = getSongMetadata("Title", resId);
+            if (songReadableName == null || song.equals("")){
+                songReadableName = songName;
+            }
+
+            songArtist = getSongMetadata("Artist", resId);
+            if (songArtist == null || songArtist.equals("")){
+                songArtist = "Unknown";
             }
 
             // PROCESS: create and start music player
@@ -321,13 +385,13 @@ public final class TaskController {
     private boolean playMusicArtist(String artist){
         String song = getMusicBasedOnMetadata("Artist", artist);
         if (song != null){
-            playMusic(song);
+            return playMusic(song);
         }
         //TODO error handle the songs we can't find =(
         else{
             System.out.println("couldn't find song =(");
+            return false;
         }
-        return true;
     }
 
     /**
@@ -339,28 +403,29 @@ public final class TaskController {
     private boolean playMusicGenre(String genre){
         String song = getMusicBasedOnMetadata("Genre", genre);
         if (song != null){
-            playMusic(song);
+            return playMusic(song);
         }
         //TODO error handle the songs we can't find =(
         else{
             System.out.println("couldn't find song =(");
+            return false;
         }
-        return true;
     }
   
       /**
-     * Get the song title, artist or genre from the music file's metadata
+     * Function that chooses a song based on a given metadata value
      *
-     * @param type - The type of metadata expected as a returned value
-     * @param data - The data that we want to choose a song based off
+     * @param type - The type of metadata to find and use ("Artist" or "Genre")
+     * @param data - The data that we want to choose a song based off (Name of the artist or genre)
      *
-     * @return string containing desired metadata info
+     * @return string containing the title of the chosen song
      * */
     private String getMusicBasedOnMetadata(String type, String data){
+        System.out.println("data:"+ data);
         //list of matching songs
         List<String> songList = new ArrayList<>();
 
-        List<Integer> musicIds = getAllSongResourceIds(context);
+        List<Integer> musicIds = getAllSongResourceIds();
 
         for (int id:musicIds){
             //create a new Metadata retriever
@@ -424,15 +489,48 @@ public final class TaskController {
             return iterableSongList[randomNum];
         }
     }
+    /**
+     * Function that returns the desired metadata for a specific mp3 file ID
+     *
+     * @param type - The type of metadata to grab (Artist or Title)
+     * @param id - The ID for the mp3 file of the chosen song
+     *
+     * @return String - The metadata
+     * */
+    private String getSongMetadata(String type, int id){
+        //create a new Metadata retriever
+        MediaMetadataRetriever meta = new MediaMetadataRetriever();
+        AssetFileDescriptor afd;
+
+        try{
+            afd = context.getResources().openRawResourceFd(id);
+            if (afd == null){
+                return null;
+            }
+
+            meta.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+
+            if (type.equals("Artist")) {
+                return meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+            }
+            else if (type.equals("Title")){
+                return meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+            }
+
+        }
+        catch (Exception e){
+            System.out.println(e);
+        }
+        return null;
+
+    }
 
     /**
      * Get the song title, artist or genre from the music file's metadata
      *
-     * @param context - The current context of the app
-     *
      * @return List<Integer> containing the list of music file ids
      * */
-    private static List<Integer> getAllSongResourceIds(Context context){
+    private List<Integer> getAllSongResourceIds(){
         List<Integer> ids = new ArrayList<>();
         try{
             Class<?> raw = Class.forName(context.getPackageName() + ".R$raw");
@@ -622,8 +720,8 @@ public final class TaskController {
         // PROCESS: build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.kramelix_logo) // FIXME: this could later be changed to the song's album cover (if there's time)
-                .setContentTitle("Now Playing...")
-                .setContentText(songName)
+                .setContentTitle(songReadableName)
+                .setContentText(songArtist)
                 .setOnlyAlertOnce(true)
                 .setOngoing(true)
                 .setStyle(new MediaStyle()
