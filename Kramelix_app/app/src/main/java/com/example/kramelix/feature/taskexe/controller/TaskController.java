@@ -616,7 +616,7 @@ public final class TaskController {
         mediaSession.setPlaybackState(builder.build());
     }
 
-    // ----------------------- TASK: SET ALARM -----------------------
+    // ------------------------------ TASK: SET ALARM ------------------------------
 
     /**
      * Function that sets an alarm based on the time (minutes) given by user

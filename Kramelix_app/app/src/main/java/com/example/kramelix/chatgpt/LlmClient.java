@@ -152,7 +152,7 @@ public final class LlmClient {
                         "role", "system",
                         "content", "FAILURETOTASKITUP: The previous task \"" + respParts[0] + "\" could not be completed. " +
                                 "Reply to the user apologetically to inform them that their previous requested task failed. " +
-                                "If the user simply says '[BLANK_AUDIO]', ask for clarification." +
+                                "If the user simply says '[BLANK_AUDIO]', ask for clarification. Don't repeat '[BLANK_AUDIO]'." +
                                 "Your response should be short (1–3 sentences). Remember you can still play known music."
                 );
                 failurePrompt.add(failMsg);
