@@ -89,12 +89,12 @@ public final class TTSController implements TextToSpeech.OnInitListener {
     /**
      * Callback triggered after {@link TextToSpeech} initialization.
      *
-     * @param status The initialization status; {@link TextToSpeech#SUCCESS} or {@link TextToSpeech#ERROR}.
+     * @param i The initialization status; {@link TextToSpeech#SUCCESS} or {@link TextToSpeech#ERROR}.
      */
     @Override
-    public void onInit(int status) {
+    public void onInit(int i) {
 
-        if (TextToSpeech.SUCCESS == status && null != textToSpeech) {
+        if (TextToSpeech.SUCCESS == i && null != textToSpeech) {
 
             int result = textToSpeech.setLanguage(DEFAULT_LOCALE);
 
@@ -111,7 +111,7 @@ public final class TTSController implements TextToSpeech.OnInitListener {
             }
         } else {
             // LOG OUTPUT:
-            Log.e(TAG, "TTS initialization failed (status=" + status + ")");
+            Log.e(TAG, "TTS initialization failed (status=" + i + ")");
         }
 
     }

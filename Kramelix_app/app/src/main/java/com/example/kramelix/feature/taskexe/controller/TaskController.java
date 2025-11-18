@@ -8,11 +8,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
-import android.media.MediaPlayer;
+import android.content.res.Resources;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.os.CountDownTimer;
 import android.os.SystemClock;
-import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.view.View;
@@ -21,19 +21,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-import androidx.media.app.NotificationCompat.MediaStyle;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.example.kramelix.R;
 
-import org.w3c.dom.Text;
-
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This controller executes user-requested device actions recognized by the LLM.
@@ -75,22 +72,20 @@ public final class TaskController {
     MediaPlayer mediaPlayer;
     private int pausedTime;
     private MediaSessionCompat mediaSession;
-    String songName;
-    String songReadableName;
-    String songArtist;
-
-    // -------------------- ALARM COUNTDOWN TIMER --------------------
-    private CountDownTimer alarmCountdownTimer;
-
+    private String songReadableName;
+    private String songArtist;
 
     // -------------------- NOTIFICATION CHANNEL --------------------
     private static final String CHANNEL_ID = "Media Channel";
-    NotificationManager notificationManager;
+    private NotificationManager notificationManager;
 
     // ----------------------------- UI -----------------------------
     private LinearLayout musicControlsLayout;
     private ImageButton playResumeMusicButton;
-    private TextView alarmCountdownText;
+    /**
+     * @noinspection WeakerAccess
+     */
+    TextView alarmCountdownText;
 
     // ----------------------------- LIFECYCLE -----------------------------
 
@@ -167,13 +162,13 @@ public final class TaskController {
      * Associate the play/resume button with an Image button
      * Associate the alarm countdown time with a TextView
      *
-     * @param layout- the Linear Layout containing the music control buttons;
-     *              received from MainActivity.java
+     * @param layout-               the Linear Layout containing the music control buttons;
+     *                              received from MainActivity.java
      * @param playResumeMusicButton - the Image Button a user clicks to pause/resume music
-     * @param alarmCountdownText - the TextView showing the countdown for the alarm
+     * @param alarmCountdownText    - the TextView showing the countdown for the alarm
      */
     public void setUIElements(LinearLayout layout, ImageButton playResumeMusicButton, TextView alarmCountdownText) {
-        this.musicControlsLayout = layout;
+        musicControlsLayout = layout;
         this.playResumeMusicButton = playResumeMusicButton;
         this.alarmCountdownText = alarmCountdownText;
     }
@@ -205,22 +200,20 @@ public final class TaskController {
         }
 
         //Task: Play Music based on an Artist
-        else if (task.contains("playMusicArtist(")){
+        else if (task.contains("playMusicArtist(")) {
             String[] taskParams = getParams(task);
-            if (taskParams.length == 1){
+            if (1 == taskParams.length) {
                 return playMusicArtist(taskParams[0]);
             }
         }
 
         //Task: Play Music based on a Genre
-        else if (task.contains("playMusicGenre(")){
-            String[] taskParams=  getParams(task);
-            if (taskParams.length == 1){
+        else if (task.contains("playMusicGenre(")) {
+            String[] taskParams = getParams(task);
+            if (1 == taskParams.length) {
                 return playMusicGenre(taskParams[0]);
             }
-        }
-
-        else if (task.contains("setAlarm(")) { // task: Set an Alarm
+        } else if (task.contains("setAlarm(")) { // task: Set an Alarm
 
             // extract the parameters from the string
             String[] taskParams = getParams(task);
@@ -303,7 +296,7 @@ public final class TaskController {
         }
         //PROCESS: verify if the artist is correct
         String artistMeta = getSongMetadata("Artist", resId);
-        if (artistMeta != null && artistMeta.toLowerCase().contains(artist.toLowerCase().trim())){
+        if (null != artistMeta && artistMeta.toLowerCase().contains(artist.toLowerCase().trim())) {
             return playMusic(song);
         }
         System.out.println("Song artist doesn't match given artist" + artist);
@@ -325,7 +318,7 @@ public final class TaskController {
             }
 
             // PROCESS: ensure song name is readable by AndroidStudio
-            songName = song.trim().toLowerCase().replace(" ", "_");
+            String songName = song.trim().toLowerCase().replace(" ", "_");
 
             // PROCESS: get resource ID (music file)
             @SuppressLint("DiscouragedApi") int resId = context.getResources().getIdentifier(songName, "raw", context.getPackageName());
@@ -338,12 +331,12 @@ public final class TaskController {
 
             // PROCESS: Get the readable song title
             songReadableName = getSongMetadata("Title", resId);
-            if (songReadableName == null || song.equals("")){
+            if (null == songReadableName || song.isEmpty()) {
                 songReadableName = songName;
             }
 
             songArtist = getSongMetadata("Artist", resId);
-            if (songArtist == null || songArtist.equals("")){
+            if (null == songArtist || songArtist.isEmpty()) {
                 songArtist = "Unknown";
             }
 
@@ -382,13 +375,13 @@ public final class TaskController {
      * @param artist The artist of the song to play
      * @return Boolean representing the success of the music playing. Success = true, any error (including unable to find song) is false
      */
-    private boolean playMusicArtist(String artist){
+    private boolean playMusicArtist(String artist) {
         String song = getMusicBasedOnMetadata("Artist", artist);
-        if (song != null){
+        if (null != song) {
             return playMusic(song);
         }
         //TODO error handle the songs we can't find =(
-        else{
+        else {
             System.out.println("couldn't find song =(");
             return false;
         }
@@ -400,63 +393,63 @@ public final class TaskController {
      * @param genre The genre of the song to play
      * @return Boolean representing the success of the music playing. Success = true, any error (including unable to find song) is false
      */
-    private boolean playMusicGenre(String genre){
+    private boolean playMusicGenre(String genre) {
         String song = getMusicBasedOnMetadata("Genre", genre);
-        if (song != null){
+        if (null != song) {
             return playMusic(song);
         }
         //TODO error handle the songs we can't find =(
-        else{
+        else {
             System.out.println("couldn't find song =(");
             return false;
         }
     }
-  
-      /**
+
+    /**
      * Function that chooses a song based on a given metadata value
      *
      * @param type - The type of metadata to find and use ("Artist" or "Genre")
      * @param data - The data that we want to choose a song based off (Name of the artist or genre)
-     *
      * @return string containing the title of the chosen song
-     * */
-    private String getMusicBasedOnMetadata(String type, String data){
-        System.out.println("data:"+ data);
+     */
+    @Nullable
+    private String getMusicBasedOnMetadata(String type, String data) {
+        System.out.println("data:" + data);
         //list of matching songs
-        List<String> songList = new ArrayList<>();
+        List<String> songList = new ArrayList<>(0);
 
         List<Integer> musicIds = getAllSongResourceIds();
 
-        for (int id:musicIds){
+        for (int id : musicIds) {
             //create a new Metadata retriever
             MediaMetadataRetriever meta = new MediaMetadataRetriever();
             AssetFileDescriptor afd;
-            String songTitle = null;
+            String songTitle;
 
-            try{
+            try {
                 afd = context.getResources().openRawResourceFd(id);
                 songTitle = context.getResources().getResourceEntryName(id);
-                if (afd == null){
+                if (null == afd) {
                     continue;
                 }
                 //set the metadata object to the current file that we want to examine
                 meta.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
 
                 //look for any artists in the f
-                if (type.equals("Artist")){
+                if ("Artist".equals(type)) {
                     String artist = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
 
-                    if (artist != null && artist.toLowerCase().contains(data.toLowerCase())){
-                        if (songTitle!=null) {
+                    if (null != artist && artist.toLowerCase().contains(data.toLowerCase())) {
+                        if (null != songTitle) {
                             songList.add(songTitle);
                         }
                     }
                 }
-                if (type.equals("Genre")){
+                if ("Genre".equals(type)) {
                     String genre = meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE);
 
-                    if (genre != null && genre.toLowerCase().contains(data.toLowerCase())){
-                        if (songTitle!=null) {
+                    if (null != genre && genre.toLowerCase().contains(data.toLowerCase())) {
+                        if (null != songTitle) {
                             songList.add(songTitle);
                         }
                     }
@@ -465,10 +458,16 @@ public final class TaskController {
                 try {
                     meta.release();
                     afd.close();
+                } catch (IOException e) {
+                    System.out.println("TaskController - I/O, failed to close resources: " + e);
+                } catch (RuntimeException e) {
+                    System.out.println("TaskController - Runtime, failed to close resources: " + e);
                 }
-                catch (Exception ignored) {}
-            }
-            catch (Exception e){
+            } catch (Resources.NotFoundException e) {
+                System.out.println("TaskController - FNFE, failed to find music file: " + e);
+            } catch (IllegalArgumentException e) {
+                System.out.println("TaskController - Illegal Arg, failed to find music file: " + e);
+            } catch (RuntimeException e) {
                 System.out.println("TaskController - Runtime, failed to find music file: " + e);
             }
         }
@@ -476,50 +475,53 @@ public final class TaskController {
         String[] iterableSongList = songList.toArray(new String[0]);
 
         //if there is only one song that fits the requirements, return that song
-        if (iterableSongList.length == 1){
+        if (1 == iterableSongList.length) {
             return iterableSongList[0];
         }
         //if there are no songs that fit the requirement, return null
-        else if (iterableSongList.length == 0){
+        else if (0 == iterableSongList.length) {
             return null;
         }
         //if there are multiple songs that fit the requirement, we must choose a random song to return
-        else{
-            int randomNum = (int)(Math.random() * iterableSongList.length);
+        else {
+            int randomNum = new SecureRandom().nextInt(iterableSongList.length);
             return iterableSongList[randomNum];
         }
     }
+
     /**
      * Function that returns the desired metadata for a specific mp3 file ID
      *
      * @param type - The type of metadata to grab (Artist or Title)
-     * @param id - The ID for the mp3 file of the chosen song
-     *
+     * @param id   - The ID for the mp3 file of the chosen song
      * @return String - The metadata
-     * */
-    private String getSongMetadata(String type, int id){
+     */
+    @Nullable
+    private String getSongMetadata(String type, int id) {
         //create a new Metadata retriever
         MediaMetadataRetriever meta = new MediaMetadataRetriever();
         AssetFileDescriptor afd;
 
-        try{
+        try {
             afd = context.getResources().openRawResourceFd(id);
-            if (afd == null){
+            if (null == afd) {
                 return null;
             }
 
             meta.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
 
-            if (type.equals("Artist")) {
+            if ("Artist".equals(type)) {
                 return meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-            }
-            else if (type.equals("Title")){
+            } else if ("Title".equals(type)) {
                 return meta.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
             }
 
-        }
-        catch (Exception e){
-            System.out.println(e);
+        } catch (Resources.NotFoundException e) {
+            System.out.println("TaskController - FNFE, failed to find music file metadate: " + e);
+        } catch (IllegalArgumentException e) {
+            System.out.println("TaskController - Illegal Arg, failed to find music file metadate: " + e);
+        } catch (RuntimeException e) {
+            System.out.println("TaskController - Runtime, failed to find music file metadate: " + e);
         }
         return null;
 
@@ -529,18 +531,23 @@ public final class TaskController {
      * Get the song title, artist or genre from the music file's metadata
      *
      * @return List<Integer> containing the list of music file ids
-     * */
-    private List<Integer> getAllSongResourceIds(){
-        List<Integer> ids = new ArrayList<>();
-        try{
+     */
+    private List<Integer> getAllSongResourceIds() {
+        List<Integer> ids = new ArrayList<>(0);
+        try {
             Class<?> raw = Class.forName(context.getPackageName() + ".R$raw");
             Field[] fields = raw.getDeclaredFields();
-            for (int i = 0; i<fields.length; i++){
-                ids.add(fields[i].getInt(null));
+            for (Field field : fields) {
+                ids.add(field.getInt(null));
             }
-        }
-        catch(Exception e){
-            System.out.println(e);
+        } catch (ClassNotFoundException e) {
+            System.out.println("TaskController - Class Not Found, failed to retrieve song resource IDs: " + e);
+        } catch (IllegalAccessException e) {
+            System.out.println("TaskController - Illegal Access, failed to retrieve song resource IDs (likely missing permission): " + e);
+        } catch (IllegalArgumentException e) {
+            System.out.println("TaskController - Illegal Arg, failed to retrieve song resource IDs: " + e);
+        } catch (RuntimeException e) {
+            System.out.println("TaskController - Runtime, failed to retrieve song resource IDs: " + e);
         }
         return ids;
     }
@@ -562,7 +569,7 @@ public final class TaskController {
      * Function to resume music
      */
     public void resumeMusic() {
-        if (mediaPlayer != null) {
+        if (null != mediaPlayer) {
             mediaPlayer.seekTo(pausedTime);
             mediaPlayer.start(); // start playing song from where it was paused
             updatePlaybackState(PlaybackStateCompat.STATE_PLAYING); // update playback state
@@ -652,26 +659,24 @@ public final class TaskController {
             showAlarmTime();
 
             // create countdown on main (UI) thread
-            new android.os.Handler(context.getMainLooper()).post(() -> {
-                alarmCountdownTimer = new CountDownTimer(minutes * 60L * 1000L, 1000) {
-                    @Override
-                    public void onFinish() {
-                        hideAlarmtime(); // hide time once alarm triggers
-                    }
+            new android.os.Handler(context.getMainLooper()).post(() -> new CountDownTimer(minutes * 60L * 1000L, 1000) {
+                @Override
+                public void onFinish() {
+                    hideAlarmtime(); // hide time once alarm triggers
+                }
 
-                    @SuppressLint("DefaultLocale")
-                    @Override
-                    public void onTick(long millisUntilFinished) { // keep counting down every second
-                        long hour = (millisUntilFinished / 3600000) % 24;
-                        long min = (millisUntilFinished / 60000) % 60;
-                        long sec = (millisUntilFinished / 1000) % 60;
+                @SuppressLint("DefaultLocale")
+                @Override
+                public void onTick(long l) { // keep counting down every second (where l is ms until finish)
+                    long hour = (l / 3600000) % 24;
+                    long min = (l / 60000) % 60;
+                    long sec = (l / 1000) % 60;
 
-                        if (alarmCountdownText != null) {
-                            alarmCountdownText.setText(String.format("%02d:%02d:%02d", hour, min, sec));
-                        }
+                    if (null != alarmCountdownText) {
+                        alarmCountdownText.setText(String.format("%02d:%02d:%02d", hour, min, sec));
                     }
-                }.start();
-            });
+                }
+            }.start());
 
             // OUTPUT: show result in log, return true if able to set alarm
             System.out.println("TaskController - Alarm set for " + minutes + " minutes from now");
@@ -693,7 +698,7 @@ public final class TaskController {
      */
     private void createNotificationChannel() {
         // PROCESS: create the notification channel
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        if (android.os.Build.VERSION_CODES.O <= android.os.Build.VERSION.SDK_INT) {
             CharSequence name = "Media Playback";
             int importance = NotificationManager.IMPORTANCE_LOW;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
@@ -705,7 +710,7 @@ public final class TaskController {
     /**
      * This function creates the notification to display
      */
-    public void showNotification() {
+    void showNotification() {
 
         // PROCESS: create a play/pause intent
         Intent playPauseIntent = new Intent(context, MediaActionReceiver.class)
@@ -724,7 +729,7 @@ public final class TaskController {
                 .setContentText(songArtist)
                 .setOnlyAlertOnce(true)
                 .setOngoing(true)
-                .setStyle(new MediaStyle()
+                .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
                         .setShowActionsInCompactView(0)) // 0 = play/pause
                 .addAction(new NotificationCompat.Action(
@@ -732,9 +737,9 @@ public final class TaskController {
                 ));
 
         // PROCESS: get the system's notification center and post the notification
-        android.app.NotificationManager notificationManager =
+        android.app.NotificationManager notificationService =
                 (android.app.NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(1, builder.build());
+        notificationService.notify(1, builder.build());
     }
 
     // ------------------------------- HANDLE UI CHANGES -------------------------------
@@ -743,11 +748,9 @@ public final class TaskController {
      * Set the layout to VISIBLE
      */
     private void showMusicControls() {
-        if (musicControlsLayout != null) {
+        if (null != musicControlsLayout) {
             // runs on the main thread
-            new android.os.Handler(context.getMainLooper()).post(() -> {
-                musicControlsLayout.setVisibility(View.VISIBLE);
-            });
+            new android.os.Handler(context.getMainLooper()).post(() -> musicControlsLayout.setVisibility(View.VISIBLE));
         }
     }
 
@@ -755,11 +758,9 @@ public final class TaskController {
      * Set the layout to INVISIBLE
      */
     private void hideMusicControls() {
-        if (musicControlsLayout != null) {
+        if (null != musicControlsLayout) {
             // runs on the main thread
-            new android.os.Handler(context.getMainLooper()).post(() -> {
-                musicControlsLayout.setVisibility(View.INVISIBLE);
-            });
+            new android.os.Handler(context.getMainLooper()).post(() -> musicControlsLayout.setVisibility(View.INVISIBLE));
         }
     }
 
@@ -768,7 +769,7 @@ public final class TaskController {
      *
      * @param button - the Image Button used to control playing and resuming music
      */
-    private void switchPlayResumeMusicIcon (ImageButton button) {
+    private void switchPlayResumeMusicIcon(ImageButton button) {
         if (isMusicPlaying())
             button.setImageResource(R.drawable.pause);
         else
@@ -778,30 +779,29 @@ public final class TaskController {
     /**
      * Shows the alarm time when an alarm has been set
      */
-    public void showAlarmTime() {
+    private void showAlarmTime() {
         // runs on the main thread
-        new android.os.Handler(context.getMainLooper()).post(() -> {
-            alarmCountdownText.setVisibility(View.VISIBLE);
-        });
+        new android.os.Handler(context.getMainLooper()).post(() -> alarmCountdownText.setVisibility(View.VISIBLE));
     }
 
     /**
      * Hides the alarm time once an alarm has gone off
+     *
+     * @noinspection WeakerAccess
      */
-    public void hideAlarmtime() {
+    void hideAlarmtime() {
         // runs on the main thread
-        new android.os.Handler(context.getMainLooper()).post(() -> {
-            alarmCountdownText.setVisibility(View.GONE);
-        });
+        new android.os.Handler(context.getMainLooper()).post(() -> alarmCountdownText.setVisibility(View.GONE));
     }
 
     // ------------------------------- HELPER FUNCTION -------------------------------
+
     /**
      * Check if music is currently being played
      *
      * @return true if music is playing, false otherwise
      */
     public boolean isMusicPlaying() {
-        return mediaPlayer != null && mediaPlayer.isPlaying();
+        return null != mediaPlayer && mediaPlayer.isPlaying();
     }
 }

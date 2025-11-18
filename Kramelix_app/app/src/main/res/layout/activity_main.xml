@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootConstraintLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
@@ -68,6 +69,7 @@
         android:layout_width="106dp"
         android:layout_height="99dp"
         android:layout_marginStart="152dp"
+        android:layout_marginTop="10dp"
         android:layout_marginEnd="153dp"
         android:background="@drawable/microphone"
         android:textOff="@string/empty_string"
@@ -97,7 +99,7 @@
         android:id="@+id/musicControlsLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="5dp"
         android:layout_marginBottom="10dp"
         android:gravity="center"
         android:orientation="horizontal"
@@ -112,6 +114,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="@color/custom_yellow"
+            android:contentDescription="@string/play_pause_button_content_desc"
             android:src="@drawable/pause" />
 
         <ImageButton
@@ -120,6 +123,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:backgroundTint="@color/custom_yellow"
+            android:contentDescription="@string/stop_button_content_desc"
             android:src="@drawable/stop" />
 
     </LinearLayout>
