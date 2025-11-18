@@ -199,18 +199,18 @@ public final class TaskController {
             }
         }
 
-        //Task: Play Music based on an Artist
-        else if (task.contains("playMusicArtist(")) {
+        // Task: Play Music based on an Artist
+        else if (task.contains("playMusicArtist(")){
             String[] taskParams = getParams(task);
             if (1 == taskParams.length) {
                 return playMusicArtist(taskParams[0]);
             }
         }
 
-        //Task: Play Music based on a Genre
-        else if (task.contains("playMusicGenre(")) {
-            String[] taskParams = getParams(task);
-            if (1 == taskParams.length) {
+        // Task: Play Music based on a Genre
+        else if (task.contains("playMusicGenre(")){
+            String[] taskParams=  getParams(task);
+            if (taskParams.length == 1){
                 return playMusicGenre(taskParams[0]);
             }
         } else if (task.contains("setAlarm(")) { // task: Set an Alarm
@@ -259,7 +259,7 @@ public final class TaskController {
         }
 
         // if none of the above was fulfilled, that means that a task was not requested
-        return true;
+        return false;
     }
 
     // ----------------------- TASK PARAMETER -----------------------
@@ -347,6 +347,7 @@ public final class TaskController {
 
             // update UI -> show music controls
             showMusicControls();
+            switchPlayResumeMusicIcon();
 
             // PROCESS: update playback state
             updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
@@ -560,7 +561,7 @@ public final class TaskController {
             mediaPlayer.pause(); // pause song
             pausedTime = mediaPlayer.getCurrentPosition(); // get time of song it was paused at
             updatePlaybackState(PlaybackStateCompat.STATE_PAUSED); // update playback state
-            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
+            switchPlayResumeMusicIcon(); // update play/resume button
             System.out.println("TaskController - Music paused");
         }
     }
@@ -573,7 +574,7 @@ public final class TaskController {
             mediaPlayer.seekTo(pausedTime);
             mediaPlayer.start(); // start playing song from where it was paused
             updatePlaybackState(PlaybackStateCompat.STATE_PLAYING); // update playback state
-            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
+            switchPlayResumeMusicIcon(); // update play/resume button
             System.out.println("TaskController - Music resumed");
         }
     }
@@ -724,7 +725,7 @@ public final class TaskController {
 
         // PROCESS: build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.kramelix_logo) // FIXME: this could later be changed to the song's album cover (if there's time)
+                .setSmallIcon(R.drawable.kramelix_logo)
                 .setContentTitle(songReadableName)
                 .setContentText(songArtist)
                 .setOnlyAlertOnce(true)
@@ -767,13 +768,12 @@ public final class TaskController {
     /**
      * Change the play/resume button icon based on whether music is being played or not
      *
-     * @param button - the Image Button used to control playing and resuming music
      */
-    private void switchPlayResumeMusicIcon(ImageButton button) {
+    private void switchPlayResumeMusicIcon() {
         if (isMusicPlaying())
-            button.setImageResource(R.drawable.pause);
+            playResumeMusicButton.setImageResource(R.drawable.pause);
         else
-            button.setImageResource(R.drawable.play);
+            playResumeMusicButton.setImageResource(R.drawable.play);
     }
 
     /**

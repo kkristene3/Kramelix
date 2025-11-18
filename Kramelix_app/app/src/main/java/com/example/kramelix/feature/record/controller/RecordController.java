@@ -91,7 +91,7 @@ public final class RecordController {
     public void startRecording(@NonNull File wavOut) throws IOException {
 
         // PROCESS: stop any music if playing
-        taskExe.stopMusic();
+        taskExe.pauseMusic();
 
         // PROCESS: having PCM record run writher thread internally
         recorder.start(wavOut);
@@ -115,10 +115,8 @@ public final class RecordController {
 
         long size = wavOut.length(); // final file size for UX/debug
 
-        // OUTPUT: UX feedback
-        Toast.makeText(ctx, "Saved: " + size + " bytes\n" + wavOut.getAbsolutePath(),
-                Toast.LENGTH_SHORT).show();
-
+        // OUTPUT:
+        Toast.makeText(ctx, "Recording Finished!", Toast.LENGTH_SHORT).show();
     }
 
 }
