@@ -38,8 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.SyncFailedException;
 
-import kotlinx.coroutines.scheduling.Task;
-
 /**
  * This class acts as the app's entry point: binds chat UI, handles app permissions, & delegates
  * recording, playback, transcription, LLM, and TTS to feature controllers.
@@ -242,9 +240,7 @@ public final class MainActivity extends AppCompatActivity {
         });
 
         // set stop music button listener
-        stopMusicButton.setOnClickListener(v -> {
-            taskController.stopMusic();
-        });
+        stopMusicButton.setOnClickListener(v -> taskController.stopMusic());
     }
 
     /**
@@ -381,6 +377,7 @@ public final class MainActivity extends AppCompatActivity {
      * Public entry point used by TaskController to ensure call permission.
      *
      * @return {@code true} if permission is granted; {@code false} otherwise (and permission requested).
+     * @noinspection BooleanMethodIsAlwaysInverted, BooleanMethodNameMustStartWithQuestion
      */
     public boolean ensureCallPermission() {
         if (hasCallPermission()) return true;
