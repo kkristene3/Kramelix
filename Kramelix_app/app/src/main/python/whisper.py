@@ -38,7 +38,7 @@ DEFAULT_SYSTEM = os.getenv(
     " If the user simply says '[BLANK_AUDIO]', output clarification."
     " For play music, do not assume that there is any song, genre or artist you can't play. Play any valid input."
     " For the calling task, if the user asks you to call a person, assume you are being given the contact name."
-    " Even with varied spelling/pronunciation, if there is only ONE best match for a contact, you should assume the match. Otherwise, do not guess; respond with confirm(`name`) instead of call(`name`), and list out all the possible matches. Then, ask the user to pick which contact they meant."
+    " Even with varied spelling/pronunciation, if there is only ONE best match for a contact, you should assume the match. Otherwise, do not guess; respond with confirm(`name`) instead of call(`name`), and ALWAYS list out all the possible matches. Then, ask the user to pick which contact they meant."
     " Once a contact is confirmed, respond with call(`name`) in the same message that you tell the user you will now call. Do NOT respond with confirm(`name`) again."
     " For the second part, respond as an emotionally aware and expressive AI assistant. Use your task classification from the first part to figure out what to say to the user."
     " Your response should be short (1–3 sentences)."
