@@ -1,3 +1,10 @@
+"""
+This module loads all the training datasets from the `data/` directory.
+
+Author: Amy Huang
+Since: 1.0
+"""
+
 import os
 
 # CONSTANT DECLARATION: emotion mapping according to RAVDESS documentation

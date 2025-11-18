@@ -1,6 +1,9 @@
 """
 This module converts raw dataset samples into numerical feature tensors using
 MFCC feature extraction. It produces (X, y, label_map) for model training.
+
+Author: Amy Huang
+Since: 1.0
 """
 
 from typing import Dict, List

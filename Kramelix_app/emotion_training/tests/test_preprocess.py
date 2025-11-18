@@ -1,3 +1,10 @@
+"""
+This test module dumps out the preprocess data.
+
+Author: Amy Huang
+Since: 1.0
+"""
+
 import numpy as np
 
 from src.dataset_loader import load_all_datasets

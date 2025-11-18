@@ -1,3 +1,10 @@
+"""
+This module contains the main training pipeline entry point.
+
+Author: Amy Huang
+Since: 1.0
+"""
+
 import json
 import os
 

@@ -1,5 +1,8 @@
 """
 This module extracts audio features (MFCCs only for now) using librosa.
+
+Author: Amy Huang
+Since: 1.0
 """
 
 import librosa

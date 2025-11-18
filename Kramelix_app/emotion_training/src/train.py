@@ -1,6 +1,9 @@
 """
 This module defines the training pipeline for the audio emotion recognition model.
 It accepts preprocessed MFCC tensors & trains a simple feed-forward neural classifier.
+
+Author: Amy Huang
+Since: 1.0
 """
 
 from typing import Dict, Tuple
