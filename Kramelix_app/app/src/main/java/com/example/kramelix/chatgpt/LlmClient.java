@@ -10,6 +10,8 @@ import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
 import com.example.kramelix.feature.taskexe.controller.TaskController;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -117,6 +119,9 @@ public final class LlmClient {
         // Splitting the response into task command (index 0) and chat response (index 1)
         String[] respParts = splitMsg(resp.toString());
 
+        // INITIALIZE: variables
+        String llmMessage = respParts.length > 1 ? respParts[1].trim() : "";
+
         TaskController taskExe = TaskController.getInstance(app);
 
         // If the task command is recognized as a supported command, execute the task
@@ -131,20 +136,41 @@ public final class LlmClient {
             System.out.println(respParts[0]);
 
             // TODO: Have the LLM tell the user if the task was unable to be completed (taskStatus is false) > make the llm create a response
-            //  The LLM should do this automatically if it is given the text FAILURETOTASKITUP (untested)
+            //  The LLM should do this automatically if it is given the text FAILURETOTASKITUP > tested but needs cleanup on prompt for better response from llm
 
             // If llm cannot perform task, respond with the following message
             if (!taskStatus) {
-                return "Sorry, I cannot perform this task. Do you have another question to ask me?";
+
+                // PROCESS: create the failure prompt to sent to llm
+                List<Map<String, String>> failurePrompt = new ArrayList<>();
+                for (Map<String,String> m : messages) {
+                    failurePrompt.add(m);
+                }
+
+                // PROCESS: create system message
+                Map<String,String> failMsg = Map.of(
+                        "role", "system",
+                        "content", "FAILURETOTASKITUP: The previous task \"" + respParts[0] + "\" could not be completed. reply to the user apologetically to inform them that their previous requested task failed."
+                );
+                failurePrompt.add(failMsg);
+
+                // PROCESS: call llm to get a response
+                resp = mod.callAttr("chat", (apiKey == null ? "" : apiKey), new org.json.JSONArray(failurePrompt).toString());
+
+                // PROCESS: return only the LLM message (ignore task command for failure)
+                String[] failureParts = splitMsg(resp.toString());
+                return failureParts.length > 1 ? failureParts[1].trim() : resp.toString();
+
             }
         }
-
         // OUTPUT: returning the response as a String
         if (respParts.length==1){
             return respParts[0];
         }
-        return respParts[1];
 
+
+        // OUTPUT: if task succeeded or a task was not given, return regular LLM response
+        return llmMessage.isEmpty() ? respParts[0] : llmMessage;
     }
 
     /**

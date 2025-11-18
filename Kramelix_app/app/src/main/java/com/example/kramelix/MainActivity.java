@@ -34,8 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.SyncFailedException;
 
-import kotlinx.coroutines.scheduling.Task;
-
 /**
  * This class acts as the app's entry point: binds chat UI, handles app permissions, & delegates
  * recording, playback, transcription, LLM, and TTS to feature controllers.

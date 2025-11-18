@@ -204,7 +204,7 @@ public final class TaskController {
             }
         }
 
-        //Task: Play Music based on an Artist
+        // Task: Play Music based on an Artist
         else if (task.contains("playMusicArtist(")){
             String[] taskParams = getParams(task);
             if (taskParams.length == 1){
@@ -212,7 +212,7 @@ public final class TaskController {
             }
         }
 
-        //Task: Play Music based on a Genre
+        // Task: Play Music based on a Genre
         else if (task.contains("playMusicGenre(")){
             String[] taskParams=  getParams(task);
             if (taskParams.length == 1){
@@ -266,7 +266,7 @@ public final class TaskController {
         }
 
         // if none of the above was fulfilled, that means that a task was not requested
-        return true;
+        return false;
     }
 
     // ----------------------- TASK PARAMETER -----------------------
@@ -405,7 +405,7 @@ public final class TaskController {
         if (song != null){
             return playMusic(song);
         }
-        //TODO error handle the songs we can't find =(
+        // TODO: error handle the songs we can't find =(
         else{
             System.out.println("couldn't find song =(");
             return false;
@@ -719,7 +719,7 @@ public final class TaskController {
 
         // PROCESS: build notification
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.kramelix_logo) // FIXME: this could later be changed to the song's album cover (if there's time)
+                .setSmallIcon(R.drawable.kramelix_logo)
                 .setContentTitle(songReadableName)
                 .setContentText(songArtist)
                 .setOnlyAlertOnce(true)

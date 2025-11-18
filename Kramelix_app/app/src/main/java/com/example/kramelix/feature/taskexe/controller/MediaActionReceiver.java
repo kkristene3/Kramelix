@@ -5,7 +5,7 @@ import android.content.Intent;
 
 /**
  * This receiver is a BroadcastReceiver and is triggered by the system when a song starts playing
- * It creates a notification that will allow the use to play and pause
+ * It creates a notification that allows the user to play and pause the music
  *
  * @author Kristen Duong
  * @noinspection PublicConstructor
