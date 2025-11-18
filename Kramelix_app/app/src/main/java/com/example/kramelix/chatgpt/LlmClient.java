@@ -131,7 +131,7 @@ public final class LlmClient {
             System.out.println(respParts[0]);
 
             // TODO: Have the LLM tell the user if the task was unable to be completed (taskStatus is false) > make the llm create a response
-            //  The LLM should do this automatically if it is given the text FAILURETOTASKITUP (untested)
+            // The LLM should do this automatically if it is given the text FAILURETOTASKITUP (untested)
 
             // If llm cannot perform task, respond with the following message
             if (!taskStatus) {
@@ -140,10 +140,11 @@ public final class LlmClient {
         }
 
         // OUTPUT: returning the response as a String
-        if (respParts.length==1){
+        if (1 == respParts.length){
             return respParts[0];
         }
-        return respParts[1];
+
+        return respParts[1].substring(1); // removing the leading space
 
     }
 
