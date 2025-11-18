@@ -15,12 +15,12 @@ import android.content.Intent;
 public class MediaActionReceiver extends android.content.BroadcastReceiver {
 
     @Override
-    public void onReceive(Context context, Intent intent) {
+    public final void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         TaskController controller = TaskController.getInstance(context);
 
         if ("ACTION_PLAY_PAUSE".equals(action)) {
-            if (controller.mediaPlayer != null && controller.mediaPlayer.isPlaying()) {
+            if (null != controller.mediaPlayer && controller.mediaPlayer.isPlaying()) {
                 controller.pauseMusic();
             } else {
                 controller.resumeMusic();

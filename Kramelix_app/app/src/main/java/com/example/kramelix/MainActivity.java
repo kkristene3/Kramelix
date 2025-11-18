@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -18,6 +19,9 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.kramelix.chatgpt.LlmClient;
@@ -113,6 +117,23 @@ public final class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         bindUi();
+
+        View root = findViewById(R.id.rootConstraintLayout);
+
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+            // PROCESS: adding padding for devices with 3-button nav OR gesture nav
+            view.setPadding(
+                    view.getPaddingLeft(),
+                    bars.top,
+                    view.getPaddingRight(),
+                    bars.bottom
+            );
+
+            return insets;
+        });
+
         setupControllers();
         initModelOnce();
         setupButtons();
@@ -219,9 +240,7 @@ public final class MainActivity extends AppCompatActivity {
         });
 
         // set stop music button listener
-        stopMusicButton.setOnClickListener(v -> {
-            taskController.stopMusic();
-        });
+        stopMusicButton.setOnClickListener(v -> taskController.stopMusic());
     }
 
     /**
@@ -358,6 +377,7 @@ public final class MainActivity extends AppCompatActivity {
      * Public entry point used by TaskController to ensure call permission.
      *
      * @return {@code true} if permission is granted; {@code false} otherwise (and permission requested).
+     * @noinspection BooleanMethodIsAlwaysInverted, BooleanMethodNameMustStartWithQuestion
      */
     public boolean ensureCallPermission() {
         if (hasCallPermission()) return true;

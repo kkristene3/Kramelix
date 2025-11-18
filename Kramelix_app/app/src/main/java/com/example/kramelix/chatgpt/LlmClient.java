@@ -167,7 +167,7 @@ public final class LlmClient {
             }
         }
         // OUTPUT: returning the response as a String
-        if (respParts.length==1){
+        if (1 == respParts.length){
             return respParts[0];
         }
 

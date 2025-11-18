@@ -5,12 +5,11 @@ import android.media.MediaPlayer;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import com.example.kramelix.feature.taskexe.controller.TaskController;
 
 import java.io.File;
 import java.io.IOException;
-
-import com.example.kramelix.feature.taskexe.controller.TaskController;
 
 /**
  * This controller owns the microphone recording & audio playback lifecycles (no UI widgets).
@@ -36,13 +35,6 @@ import com.example.kramelix.feature.taskexe.controller.TaskController;
  */
 public final class RecordController {
 
-    // -------------------- CONFIGURATION --------------------
-
-    /**
-     * Small heuristic to consider a WAV 'usable' (avoids zero-length/headers-only files).
-     */
-    private static final long MIN_WAV_BYTES = 2000L;
-
     // -------------------- STATE --------------------
 
     /**
@@ -56,12 +48,6 @@ public final class RecordController {
      */
     @NonNull
     private final PcmRecordController recorder = new PcmRecordController();
-
-    /**
-     * MediaPlayer instance for playback; non-null only while playing or prepared.
-     */
-    @Nullable
-    private MediaPlayer mediaPlayer;
 
     /**
      * TaskController instance to control music when user gives a new task to llm
@@ -80,7 +66,7 @@ public final class RecordController {
     private RecordController(@NonNull Context ctx) {
         // INITIALIZATION: avoiding Activity leak by storing application context.
         this.ctx = ctx.getApplicationContext();
-        this.taskExe = TaskController.getInstance(ctx);
+        taskExe = TaskController.getInstance(ctx);
     }
 
     /**
