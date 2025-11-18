@@ -1,3 +1,5 @@
+# run `python -m tests.test_preprocess`
+
 """
 This test module dumps out the preprocess data.
 

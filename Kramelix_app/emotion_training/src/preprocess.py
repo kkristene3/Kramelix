@@ -1,31 +1,34 @@
 """
-This module converts raw dataset samples into numerical feature tensors using
-MFCC feature extraction. It produces (X, y, label_map) for model training.
+This module converts raw dataset samples into numerical MFCC tensors for modeltraining.
+All emotion labels are normalized to a fixed canonical vocabulary to ensure cross-dataset consistency & stable label ordering.
 
 Author: Amy Huang
 Since: 1.0
 """
 
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 
+from .dataset_loader import MASTER_SET
 from .features import extract_mfcc
 
 
-def build_feature_dataset(samples: List[Dict]):
+def build_feature_dataset(samples: List[Dict]) -> Tuple[np.ndarray, np.ndarray, Dict]:
     """
     @brief
-        Converts a list of audio samples (path & emotion label) into numerical model-ready datasets.
-        It extracts MFCC features for each audio file & encodes emotion labels into int classes.
+        Converts parsed dataset sample entries into numerical feature matrices.
+        Each sample contains: { "path": "...", "label": "<emotion>" }
+
+    @details
+        MFCC features are extracted from each WAV file.
+        Emotion strings are encoded using a fixed canonical ordering:
+        ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]
+        This ensures consistent label IDs across training & inference.
 
     @param
         samples: List[dict]
-            List of dataset entries of the form:
-            {
-                "path": "<absolute/audio/path.wav>",
-                "label": "<emotion>"
-            }
+            Raw dataset entries extracted from dataset_loader.
 
     @return
         (X, y, label_map)
@@ -33,31 +36,30 @@ def build_feature_dataset(samples: List[Dict]):
                 MFCC feature vectors for each audio file.
 
             y: np.ndarray, shape (num_samples,)
-                Integer-encoded emotion labels.
+                Integer emotion IDs consistent with `label_map`.
 
             label_map: dict
                 Mapping of emotion string to integer ID.
-                Ex: { "happy": 0, "sad": 1, ... }
     """
 
     # VARIABLE DECLARATION:
     X = []  # list of MFCC feature vectors
     y = []  # list of int emotion labels
 
-    label_map = {}  # mapping for emotion string to numeric class
-    label_counter = 0
+    label_map = {
+        emotion: index for index, emotion in enumerate(MASTER_SET)
+    }  # mapping master set strings to numeric classes
 
     # PROCESS: handling every audio sample
     for sample in samples:
 
         path = sample["path"]  # extracting path
-        emotion = sample["label"]  # ... label
+        emotion = sample["label"]  # extracting label
 
         # PROCESS: assigning int ID for each unique emotion
-        if emotion not in label_map:  # not yet assigned
-
-            label_map[emotion] = label_counter
-            label_counter += 1  # updating count
+        if emotion not in label_map:  # not in master set
+            print(f"[WARNING] Unknown emotion '{emotion}' in sample {path}. Skipped.")
+            continue  # skipping
 
         # PROCESS: extracting MFCC feature vector from audio file
         try:
@@ -67,7 +69,7 @@ def build_feature_dataset(samples: List[Dict]):
             print(f"[WARNING] Failed to process file: {path} | Error: {e}")
             continue  # skipping
 
-        # PROCESS: updating lists
+        # PROCESS: appending features & integer label
         X.append(feature_vector)
         y.append(label_map[emotion])
 

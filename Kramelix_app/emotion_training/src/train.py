@@ -17,16 +17,15 @@ from tensorflow.keras import layers
 def build_model(input_dim: int, num_classes: int) -> keras.Model:
     """
     @brief
-        Builds a feed-forward neural classifier for emotion recognition,
-        based on MFCC features.
+        Builds a feed-forward neural classifier for emotion recognition, based on MFCC features.
 
     @param
         input_dim: int
-        # of MFCC coefficients per sample (aka feature vector length).
+            # of MFCC coefficients per sample (aka feature vector length).
 
     @param
         num_classes: int
-        Total # of distinct emotion labels.
+            Total # of distinct emotion labels.
 
     @return
         Compiled Keras model ready for training.
@@ -65,11 +64,11 @@ def train_model(X: np.ndarray, y: np.ndarray) -> Tuple[keras.Model, Dict]:
 
     @param
         X: np.ndarray
-        Feature matrix shape (num_samples, num_features).
+            Feature matrix shape (num_samples, num_features).
 
     @param
         y: np.ndarray
-        Int labels shape (num_samples,).
+            Int labels shape (num_samples,).
 
     @return
         (model, history)

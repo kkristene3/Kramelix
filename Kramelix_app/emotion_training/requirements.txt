@@ -1,4 +1,4 @@
-# run `venv\Scripts\activate` in the root folder to launch Python 3.10 virtual env
+# run `venv\Scripts\activate` in the root folder to launch Python 3.10.11 virtual env
 # ^(AMY'S NOTE: you don't need to do this if you actually have 3.10 lol)
 # then run `pip install -r requirements.txt` to install all reqs.
 numpy==1.26.4

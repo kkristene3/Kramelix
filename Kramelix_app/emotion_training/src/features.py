@@ -12,32 +12,32 @@ import numpy as np
 def extract_mfcc(path: str, mfcc_count: int = 40) -> np.ndarray:
     """
     @brief
-        This function loads an audio file (WAV) & computes its MFCC feature representation.
+        Loads an audio file (WAV) & computes its MFCC feature representation.
 
     @details
         The MFCC extraction pipeline includes:
-            1. Loading audio at a fixed sampling rate (16 kHz)
-            2. Optional trimming of leading/trailing silence
-            3. Amplitude normalization
-            4. Conversion to MFCC coefficients
-            5. Time averaging to obtain a stable feature vector
+        1. Loading audio at a fixed sampling rate (16 kHz)
+        2. Optional trimming of leading/trailing silence
+        3. Amplitude normalization
+        4. Conversion to MFCC coefficients
+        5. Time averaging to obtain a stable feature vector
 
     @param
         path: str
-        Absolute or relative path to the WAV file.
+            Absolute or relative path to the WAV file.
 
     @param
         mfcc_count: int
-        # of MFCC coefficients (dimensions) to compute.
+            # of MFCC coefficients (dimensions) to compute.
 
     @return
         np.ndarray
-            1D numpy vector of shape (n_mfcc,), representing the averaged MFCC
-            features for the input audio clip.
+            1D numpy vector of shape (n_mfcc,), representing the averaged MFCC features for the input audio clip.
 
-    @throws Exception
-        Throws exceptions related to file loading, invalid audio structure,
-        or numerical failures. These are caught by preprocess.py later on.
+    @throws
+        Exception
+            Throws exceptions related to file loading, invalid audio structure, or numerical failures.
+            These are caught by preprocess.py later on.
     """
 
     # VARIABLE DECLARATION: loading waveform at 16 kHz

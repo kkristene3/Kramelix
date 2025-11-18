@@ -1,3 +1,5 @@
+# run `python -m tests.export_onnx`
+
 """
 This test module checks that the .h5 model converts nicely to an ONNX model.
 
@@ -15,5 +17,5 @@ input_name = session.get_inputs()[0].name
 dummy = np.random.rand(1, 40).astype(np.float32)
 output = session.run(None, {input_name: dummy})
 
-# OUTPUT: dumping probability of each emotion class
+# OUTPUT: dumping probability of each emotion
 print(output)

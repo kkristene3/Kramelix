@@ -17,11 +17,11 @@ def export_to_onnx(keras_model_path: str, output_path: str):
 
     @param
         keras_model_path: str
-        Path to the trained Keras model file (e.g. models/audio_emotion.h5).
+            Path to the trained Keras model file (e.g. models/audio_emotion.h5).
 
     @param
         output_path: str
-        Desired output path for the ONNX model (e.g. models/audio_emotion.onnx).
+            Desired output path for the ONNX model (e.g. models/audio_emotion.onnx).
     """
 
     print("[INFO] Loading trained Keras model...")
