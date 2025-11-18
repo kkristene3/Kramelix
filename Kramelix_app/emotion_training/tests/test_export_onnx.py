@@ -9,11 +9,11 @@ import numpy as np
 import onnxruntime as ort
 
 # VARIABLE DECLARATION: retrieving moddel
-session = ort.InferenceSession("models/audio_emotion.onnx")
+session = ort.InferenceSession("../models/audio_emotion.onnx")
 
 input_name = session.get_inputs()[0].name
 dummy = np.random.rand(1, 40).astype(np.float32)
 output = session.run(None, {input_name: dummy})
 
-# OUTPUT: dumping compatability
+# OUTPUT: dumping probability of each emotion class
 print(output)
