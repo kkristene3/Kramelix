@@ -124,16 +124,18 @@ public final class LlmClient {
 
         TaskController taskExe = TaskController.getInstance(app);
 
+        String commandType = respParts[0].trim();
+
         // If the task command is recognized as a supported command, execute the task
-        if (!"chat".equals(respParts[0]) &&
-                !"other".equals(respParts[0]) &&
-                !"unsupportedTask".equals(respParts[0])) {
+        if (!"chat".equals(commandType) &&
+                !"other".equals(commandType) &&
+                !"unsupportedTask".equals(commandType) && !"clarification".equals(commandType)){
 
             // call the executeTask function in the TaskController class
-            boolean taskStatus = taskExe.executeTask(respParts[0]);
+            boolean taskStatus = taskExe.executeTask(commandType);
 
             // TODO: TEMPORARY - to see what the task is
-            System.out.println(respParts[0]);
+            System.out.println(commandType);
 
             // TODO: Have the LLM tell the user if the task was unable to be completed (taskStatus is false) > make the llm create a response
             //  The LLM should do this automatically if it is given the text FAILURETOTASKITUP > tested but needs cleanup on prompt for better response from llm
@@ -147,15 +149,44 @@ public final class LlmClient {
                     failurePrompt.add(m);
                 }
 
-                // PROCESS: create system message
-                Map<String,String> failMsg = Map.of(
-                        "role", "system",
-                        "content", "FAILURETOTASKITUP: The previous task \"" + respParts[0] + "\" could not be completed. " +
-                                "Reply to the user apologetically to inform them that their previous requested task failed. " +
-                                "If the user simply says '[BLANK_AUDIO]', ask for clarification. Don't repeat '[BLANK_AUDIO]'." +
-                                "Your response should be short (1–3 sentences). Remember you can still play known music."
-                );
-                failurePrompt.add(failMsg);
+                //TODO: Have executeTask return a string either confirming completion or giving an error. The error message can be used to tell the LLM exactly what went wrong
+
+                //PROCESS: create system message based on music playing failure
+                if (commandType.contains("playMusic")) {
+                    // PROCESS: create system message
+                    Map<String,String> failMsg = Map.of(
+                            "role", "system",
+                            "content", "FAILURETOTASKITUP: The previous task \"" + commandType + "\" could not be completed because the user does not have that song available. " +
+                                    "Reply to the user apologetically to inform them that their previous requested task failed. Reflect their current emotional state in your answer. " +
+                                    "If the user simply says '[BLANK_AUDIO]', ask for clarification. Don't repeat '[BLANK_AUDIO]'." +
+                                    "Your response should be short (1–3 sentences). Remember you can still play known music."
+                    );
+                    failurePrompt.add(failMsg);
+                }
+
+                //PROCESS: create system message based on call failure
+                else if (commandType.equals("call")){
+                    Map<String,String> failMsg = Map.of(
+                            "role", "system",
+                            "content", "FAILURETOTASKITUP: The previous task \"" + commandType + "\" could not be completed because a contact of that name could not be found. " +
+                                    "Reply to the user apologetically to inform them that their previous requested task failed. Reflect their current emotional state in your answer. " +
+                                    "If the user simply says '[BLANK_AUDIO]', ask for clarification. Don't repeat '[BLANK_AUDIO]'." +
+                                    "Your response should be short (1–3 sentences). Remember you can still play known music."
+                    );
+                    failurePrompt.add(failMsg);
+                }
+
+                //PROCESS: create system message based on misc failure
+                else{
+                    Map<String,String> failMsg = Map.of(
+                            "role", "system",
+                            "content", "FAILURETOTASKITUP: The previous task \"" + commandType + "\" could not be completed. " +
+                                    "Reply to the user apologetically to inform them that their previous requested task failed. Reflect their current emotional state in your answer. " +
+                                    "If the user simply says '[BLANK_AUDIO]', ask for clarification. Don't repeat '[BLANK_AUDIO]'." +
+                                    "Your response should be short (1–3 sentences). Remember you can still play known music."
+                    );
+                    failurePrompt.add(failMsg);
+                }
 
                 // PROCESS: call llm to get a response
                 resp = mod.callAttr("chat", (apiKey == null ? "" : apiKey), new org.json.JSONArray(failurePrompt).toString());
@@ -166,7 +197,7 @@ public final class LlmClient {
 
             }
         }
-        // OUTPUT: returning the response as a String
+        // OUTPUT: if first part of the response is missing, return entire response as a String
         if (1 == respParts.length){
             return respParts[0];
         }
