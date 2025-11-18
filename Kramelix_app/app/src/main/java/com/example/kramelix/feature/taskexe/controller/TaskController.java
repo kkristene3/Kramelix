@@ -354,6 +354,7 @@ public final class TaskController {
 
             // update UI -> show music controls
             showMusicControls();
+            switchPlayResumeMusicIcon();
 
             // PROCESS: update playback state
             updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
@@ -553,7 +554,7 @@ public final class TaskController {
             mediaPlayer.pause(); // pause song
             pausedTime = mediaPlayer.getCurrentPosition(); // get time of song it was paused at
             updatePlaybackState(PlaybackStateCompat.STATE_PAUSED); // update playback state
-            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
+            switchPlayResumeMusicIcon(); // update play/resume button
             System.out.println("TaskController - Music paused");
         }
     }
@@ -566,7 +567,7 @@ public final class TaskController {
             mediaPlayer.seekTo(pausedTime);
             mediaPlayer.start(); // start playing song from where it was paused
             updatePlaybackState(PlaybackStateCompat.STATE_PLAYING); // update playback state
-            switchPlayResumeMusicIcon(playResumeMusicButton); // update play/resume button
+            switchPlayResumeMusicIcon(); // update play/resume button
             System.out.println("TaskController - Music resumed");
         }
     }
@@ -766,13 +767,12 @@ public final class TaskController {
     /**
      * Change the play/resume button icon based on whether music is being played or not
      *
-     * @param button - the Image Button used to control playing and resuming music
      */
-    private void switchPlayResumeMusicIcon (ImageButton button) {
+    private void switchPlayResumeMusicIcon() {
         if (isMusicPlaying())
-            button.setImageResource(R.drawable.pause);
+            playResumeMusicButton.setImageResource(R.drawable.pause);
         else
-            button.setImageResource(R.drawable.play);
+            playResumeMusicButton.setImageResource(R.drawable.play);
     }
 
     /**
