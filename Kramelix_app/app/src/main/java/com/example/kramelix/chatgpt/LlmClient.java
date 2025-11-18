@@ -132,7 +132,7 @@ public final class LlmClient {
                 !"unsupportedTask".equals(commandType) && !"clarification".equals(commandType)){
 
             // call the executeTask function in the TaskController class
-            boolean taskStatus = taskExe.executeTask(commandType);
+            boolean taskStatus = taskExe.executeTask(respParts[0]);
 
             // TODO: TEMPORARY - to see what the task is
             System.out.println(commandType);
@@ -156,7 +156,7 @@ public final class LlmClient {
                     // PROCESS: create system message
                     Map<String,String> failMsg = Map.of(
                             "role", "system",
-                            "content", "FAILURETOTASKITUP: The previous task \"" + commandType + "\" could not be completed because the user does not have that song available. " +
+                            "content", "FAILURETOTASKITUP: The previous task \"" + respParts[0] + "\" could not be completed because the user does not have that song available. " +
                                     "Reply to the user apologetically to inform them that their previous requested task failed. Reflect their current emotional state in your answer. " +
                                     "If the user simply says '[BLANK_AUDIO]', ask for clarification. Don't repeat '[BLANK_AUDIO]'." +
                                     "Your response should be short (1–3 sentences). Remember you can still play known music."
@@ -168,7 +168,7 @@ public final class LlmClient {
                 else if (commandType.equals("call")){
                     Map<String,String> failMsg = Map.of(
                             "role", "system",
-                            "content", "FAILURETOTASKITUP: The previous task \"" + commandType + "\" could not be completed because a contact of that name could not be found. " +
+                            "content", "FAILURETOTASKITUP: The previous task \"" + respParts[0] + "\" could not be completed because a contact of that name could not be found. " +
                                     "Reply to the user apologetically to inform them that their previous requested task failed. Reflect their current emotional state in your answer. " +
                                     "If the user simply says '[BLANK_AUDIO]', ask for clarification. Don't repeat '[BLANK_AUDIO]'." +
                                     "Your response should be short (1–3 sentences). Remember you can still play known music."
@@ -180,7 +180,7 @@ public final class LlmClient {
                 else{
                     Map<String,String> failMsg = Map.of(
                             "role", "system",
-                            "content", "FAILURETOTASKITUP: The previous task \"" + commandType + "\" could not be completed. " +
+                            "content", "FAILURETOTASKITUP: The previous task \"" + respParts[0] + "\" could not be completed. " +
                                     "Reply to the user apologetically to inform them that their previous requested task failed. Reflect their current emotional state in your answer. " +
                                     "If the user simply says '[BLANK_AUDIO]', ask for clarification. Don't repeat '[BLANK_AUDIO]'." +
                                     "Your response should be short (1–3 sentences). Remember you can still play known music."
