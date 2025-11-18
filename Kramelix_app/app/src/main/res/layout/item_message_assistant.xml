@@ -14,5 +14,6 @@
         android:textColor="@color/raisin_black"
         android:background="@drawable/textview_rounded"
         android:backgroundTint="@color/custom_green"
-        android:fontFamily="@font/inter_medium" />
+        android:fontFamily="@font/inter_medium"
+        android:textIsSelectable="true" />
 </FrameLayout>
