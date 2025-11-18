@@ -150,7 +150,10 @@ public final class LlmClient {
                 // PROCESS: create system message
                 Map<String,String> failMsg = Map.of(
                         "role", "system",
-                        "content", "FAILURETOTASKITUP: The previous task \"" + respParts[0] + "\" could not be completed. Reply to the user apologetically to inform them that their previous requested task failed. Your response should be short (1–3 sentences). Remember you can still play known music."
+                        "content", "FAILURETOTASKITUP: The previous task \"" + respParts[0] + "\" could not be completed. " +
+                                "Reply to the user apologetically to inform them that their previous requested task failed. " +
+                                "If the user simply says '[BLANK_AUDIO]', output clarification. Ask the user to repeat what they just said." +
+                                "Your response should be short (1–3 sentences). Remember you can still play known music."
                 );
                 failurePrompt.add(failMsg);
 
