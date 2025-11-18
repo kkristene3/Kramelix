@@ -13,9 +13,8 @@ from .features import extract_mfcc
 def build_feature_dataset(samples: List[Dict]):
     """
     @brief
-        This function converts a list of audio samples (path & emotion label) into numerical
-        model-ready datasets. It extracts MFCC features for each audio file &
-        encodes emotion labels into int classes.
+        Converts a list of audio samples (path & emotion label) into numerical model-ready datasets.
+        It extracts MFCC features for each audio file & encodes emotion labels into int classes.
 
     @param
         samples: List[dict]

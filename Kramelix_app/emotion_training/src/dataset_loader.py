@@ -16,7 +16,7 @@ RAVDESS_EMOTION_MAP = {
 def load_ravdess(path):
     """
     @brief
-        This helper function loads & parses audio files from the RAVDESS dataset directory.
+        Loads & parses audio files from the RAVDESS dataset directory.
 
     @param
         path: str
@@ -67,7 +67,7 @@ def load_ravdess(path):
 def load_all_datasets(root="data"):
     """
     @brief
-        This function aggregates all supported datasets into a unified sample list.
+        Aggregates all supported datasets into a unified sample list.
         It currently supports RAVDESS only, but is structured for future extension
         (e.g. CREMA-D, EmoDB, SAVEE).
 
