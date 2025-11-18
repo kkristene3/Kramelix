@@ -1,0 +1,10 @@
+numpy
+scipy
+librosa
+scikit-learn
+pandas
+matplotlib
+tensorflow
+tf2onnx
+soundfile
+tqdm
