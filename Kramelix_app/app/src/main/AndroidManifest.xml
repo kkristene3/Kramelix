@@ -31,6 +31,8 @@
         android:theme="@style/Theme.Kramelix">
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="sensorPortrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

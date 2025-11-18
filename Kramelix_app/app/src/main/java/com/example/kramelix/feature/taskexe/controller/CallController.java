@@ -41,8 +41,8 @@ import java.util.Set;
  * </ul>
  *
  * @author Amy Huang
- * @noinspection DynamicRegexReplaceableByCompiledPattern
- * , BooleanMethodNameMustStartWithQuestion @since 1.0
+ * @noinspection DynamicRegexReplaceableByCompiledPattern, BooleanMethodNameMustStartWithQuestion
+ * @since 1.0
  */
 public final class CallController {
 
