@@ -14,6 +14,4 @@ _NOTE: you can skip steps 1–2 if you only have Python 3.10 (which is highly un
 
 # How to Run:
 
-In the root folder, run:
-
-1. `.\run_all.bat` (or just click on the batch file from Windows File Explorer)
+In the root folder, run: `.\run_all.bat` (or just click on the batch file from Windows File Explorer)

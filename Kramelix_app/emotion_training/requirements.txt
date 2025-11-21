@@ -1,16 +1,28 @@
-# AMY'S NOTE: refer to SETUP.md for instructions on setting up the training environment
+# AMY'S NOTE:
+# Refer to `SETUP.md` for instructions on setting up the training environment.
+# Refer to `tests/README.md` for instructions on running the test scripts.
+
+# Core libraries:
 numpy==1.26.4
 scipy==1.10.1
-librosa==0.10.1
-scikit-learn==1.3.2
 pandas==2.1.4
-matplotlib==3.7.2
-
-tensorflow==2.10.0
-tf2onnx==1.13.0
-
-soundfile==0.12.1
 tqdm==4.66.1
+
+# Audio Processing & Feature Extraction:
+librosa==0.10.1
+soundfile==0.12.1
+sounddevice==0.4.6
+
+# Machine Learning:
+scikit-learn==1.3.2
 joblib==1.4.0
 
-sounddevice
+# Deep Learning:
+tensorflow==2.10.0
+
+# ONNX Export & Inference:
+tf2onnx==1.13.0
+onnxruntime==1.18.0
+
+# Visualization:
+matplotlib==3.7.2
