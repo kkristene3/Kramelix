@@ -1,5 +1,5 @@
 """
-This module converts raw dataset samples into numerical MFCC tensors for modeltraining.
+This module converts raw dataset samples into numerical MFCC tensors for model training.
 All emotion labels are normalized to a fixed canonical vocabulary to ensure cross-dataset consistency & stable label ordering.
 
 Author: Amy Huang

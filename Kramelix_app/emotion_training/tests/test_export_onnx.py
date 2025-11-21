@@ -1,4 +1,4 @@
-# run `python -m tests.export_onnx`
+# run `python -m tests.test_export_onnx`
 
 """
 This test module checks that the .h5 model converts nicely to an ONNX model.
@@ -11,7 +11,7 @@ import numpy as np
 import onnxruntime as ort
 
 # VARIABLE DECLARATION: retrieving moddel
-session = ort.InferenceSession("../models/audio_emotion.onnx")
+session = ort.InferenceSession("models/audio_emotion.onnx")
 
 input_name = session.get_inputs()[0].name
 dummy = np.random.rand(1, 40).astype(np.float32)

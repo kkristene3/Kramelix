@@ -15,8 +15,6 @@ from src.preprocess import build_feature_dataset
 # VARIABLE DECLARATION: loading the raw dataset info
 samples = load_all_datasets()
 
-print(f"[INFO] Total samples loaded: {len(samples)}")  # for debugging
-
 # PROCESS: extracting MFCC & labels
 X, y, label_map = build_feature_dataset(samples)
 
