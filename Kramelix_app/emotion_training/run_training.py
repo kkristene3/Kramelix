@@ -42,6 +42,8 @@ if __name__ == "__main__":
 
     # PROCESS: saving scaler for inference consistency
     joblib.dump(scaler, "models/scaler.pkl")
-    print("[INFO] Saved feature scaler to `models/scaler.pkl`")
+    print(
+        "[INFO] Saved feature scaler to `models/scaler.pkl` with shape: {scaler.mean_.shape}"
+    )
 
     print("[INFO] Training complete.")

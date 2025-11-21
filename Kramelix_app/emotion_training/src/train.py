@@ -1,7 +1,11 @@
 """
 This module defines the training pipeline for the audio emotion recognition model.
-It accepts preprocessed MFCC tensors & trains a feed-forward neural classifier
-with global feature normalization, class weighting, and dataset shuffling.
+It accepts preprocessed audio feature vectors (MFCC, pitch, energy, & spectral features)
+and trains a feed-forward neural classifier with:
+- Global feature normalization
+- Class weighting
+- Dataset shuffling
+- Validation splitting
 
 Author: Amy Huang
 Since: 1.0

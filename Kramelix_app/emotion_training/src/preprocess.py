@@ -1,17 +1,52 @@
 """
-This module converts raw dataset samples into numerical MFCC tensors for model training.
-All emotion labels are normalized to a fixed canonical vocabulary to ensure cross-dataset consistency & stable label ordering.
+This module converts raw dataset samples into numerical feature vectors for model training,
+now with PARALLEL PROCESSING for huge speedups during MFCC extraction.
 
 Author: Amy Huang
-Since: 1.0
+Since: 1.1  (parallel extraction enabled)
 """
 
 from typing import Dict, List, Tuple
 
 import numpy as np
+from joblib import Parallel, delayed
 
 from .dataset_loader import MASTER_SET
 from .features import extract_mfcc
+
+
+def _process_single_sample(sample, label_map):
+    """
+    @brief
+        Helper function used in parallel processing.
+        Extracts one feature vector from a sample dict:
+        { "path": "...", "label": "<emotion>" }
+
+    @return
+        (feature_vector, label_id) or None if failed
+    """
+
+    # VARIABLE DECLARATION:
+    path = sample["path"]  # extracting path
+    emotion = sample["label"]  # extracting emotion label
+
+    # PROCESS: assigning int ID for each unique emotion
+    if emotion not in label_map:  # not in master set
+        # OUTPUT:
+        print(f"[WARNING] Unknown emotion '{emotion}' in sample {path}. Skipped.")
+        return None
+
+    # PROCESS: extracting audio features
+    try:
+        feature_vector = extract_mfcc(path)
+
+    except Exception as e:  # error-handling
+        # OUTPUT:
+        print(f"[WARNING] Failed to process file: {path} | Error: {e}")
+        return None
+
+    # OUTPUT:
+    return (feature_vector, label_map[emotion])
 
 
 def build_feature_dataset(samples: List[Dict]) -> Tuple[np.ndarray, np.ndarray, Dict]:
@@ -22,8 +57,7 @@ def build_feature_dataset(samples: List[Dict]) -> Tuple[np.ndarray, np.ndarray, 
 
     @details
         MFCC features are extracted from each WAV file.
-        Emotion strings are encoded using a fixed canonical ordering:
-        ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]
+        Emotion strings are encoded using a fixed canonical ordering: ["neutral", "calm", "happy", "sad", "angry", "fearful", "disgust", "surprised"]
         This ensures consistent label IDs across training & inference.
 
     @param
@@ -43,37 +77,27 @@ def build_feature_dataset(samples: List[Dict]) -> Tuple[np.ndarray, np.ndarray, 
     """
 
     # VARIABLE DECLARATION:
-    X = []  # list of MFCC feature vectors
-    y = []  # list of int emotion labels
-
     label_map = {
-        emotion: index for index, emotion in enumerate(MASTER_SET)
+        emotion: idx for idx, emotion in enumerate(MASTER_SET)
     }  # mapping master set strings to numeric classes
 
-    # PROCESS: handling every audio sample
-    for sample in samples:
+    # OUTPUT: debugging info
+    print(f"[INFO] Beginning parallel MFCC extraction for {len(samples)} samples...")
 
-        path = sample["path"]  # extracting path
-        emotion = sample["label"]  # extracting label
+    # PROCESS: parallel extraction across all CPU cores
+    results = Parallel(
+        n_jobs=-1,  # use ALL logical CPU cores
+        backend="loky",  # isolated subprocesses (bc the features part is super heavy)
+        verbose=5,  # progress logging
+    )(delayed(_process_single_sample)(sample, label_map) for sample in samples)
 
-        # PROCESS: assigning int ID for each unique emotion
-        if emotion not in label_map:  # not in master set
-            print(f"[WARNING] Unknown emotion '{emotion}' in sample {path}. Skipped.")
-            continue  # skipping
+    # PROCESS: filtering out None entries (failed files)
+    valid = [r for r in results if r is not None]
 
-        # PROCESS: extracting MFCC feature vector from audio file
-        try:
-            feature_vector = extract_mfcc(path)
-        except Exception as e:  # error-handling
-            # OUTPUT:
-            print(f"[WARNING] Failed to process file: {path} | Error: {e}")
-            continue  # skipping
+    # PROCESS: separating into X (features) & y (labels)
+    X, y = zip(*valid)
 
-        # PROCESS: appending features & integer label
-        X.append(feature_vector)
-        y.append(label_map[emotion])
-
-    # OUTPUT: the final feature dataset
+    # OUTPUT: converting to np.arrays
     return (
         np.array(X, dtype=np.float32),
         np.array(y, dtype=np.int32),
