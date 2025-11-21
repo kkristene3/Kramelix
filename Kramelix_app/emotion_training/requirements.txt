@@ -12,3 +12,5 @@ tf2onnx==1.13.0
 soundfile==0.12.1
 tqdm==4.66.1
 joblib==1.4.0
+
+sounddevice
