@@ -12,13 +12,24 @@ In the root folder (`Kramelix\Kramelix_app\emotion_training`), run:
 _NOTE: you can skip steps 1–2 if you only have Python 3.10 (which is highly unlikely since we use
 3.13 elsewhere)._
 
+# Organizational Overview:
+
+Currently, we have two models: MFCC (the old implementation; way overfitted & less accurate) and
+Melspectrogram CNN (more accurate).
+
+The models are trained on six datasets: RAVDESS, SAVESS, TESS, CREMA-D, EmoDB, and IEMOCAP (total of
+approx. 15k .WAV files).
+The `Kramelix\Kramelix_app\emotion_training\data` folder is empty in our repository because we don't
+need to commit 29 GB of data here.
+
 # How to Run:
 
 In the root folder, run: `.\run_mfcc.bat` or `.\run_melspec.bat` (or just click on the batch file
 from Windows File
 Explorer)
 
-# Organization:
+# Test Scripts:
 
-Currently, we have two models: MFCC (the old implementation; way overfitted & less accurate) and
-Melspectrogram CNN (more accurate).
+In the test folder, we can import .WAV files locally to
+`Kramelix\Kramelix_app\emotion_training\tests\test_data` to see how our models perform on real-world
+data.
