@@ -11,3 +11,10 @@ venv/
 
 # VS Code settings
 .vscode/
+
+# Large files
+data/
+tests/test_data/
+models/*.npy
+models/*.h5
+models/*.onnx
