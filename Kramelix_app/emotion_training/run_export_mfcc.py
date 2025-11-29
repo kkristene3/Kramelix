@@ -7,13 +7,13 @@ Since: 1.0
 
 import os
 
-from src.export_onnx import export_to_onnx
+from src.mfcc_archive.export_onnx_mfcc import export_to_onnx
 
 if __name__ == "__main__":
 
     # VARIABLE DECLARATION: setting the model paths
-    keras_path = "models/audio_emotion.h5"
-    onnx_path = "models/audio_emotion.onnx"
+    keras_path = "models/audio_emotion_mfcc.h5"
+    onnx_path = "models/audio_emotion_mfcc.onnx"
 
     if not os.path.exists(keras_path):  # Keras model missing
         print("[ERROR] Keras model not found:", keras_path)

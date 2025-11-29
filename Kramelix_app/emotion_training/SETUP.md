@@ -14,4 +14,11 @@ _NOTE: you can skip steps 1–2 if you only have Python 3.10 (which is highly un
 
 # How to Run:
 
-In the root folder, run: `.\run_all.bat` (or just click on the batch file from Windows File Explorer)
+In the root folder, run: `.\run_mfcc.bat` or `.\run_melspec.bat` (or just click on the batch file
+from Windows File
+Explorer)
+
+# Organization:
+
+Currently, we have two models: MFCC (the old implementation; way overfitted & less accurate) and
+Melspectrogram CNN (more accurate).

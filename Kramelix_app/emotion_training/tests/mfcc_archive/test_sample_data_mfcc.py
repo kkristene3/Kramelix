@@ -1,9 +1,9 @@
-# run `python -m tests.test_sample_data`
+# run `python -m tests.mfcc_archive.test_sample_data_mfcc` to execute this test module
 
 """
 This test module batch-tests the ONNX audio emotion classifier using all WAV files inside the `tests/test_data/` folder.
 It loads the model, extracts audio features (MFCC + Δ + ΔΔ + extras), applies the saved StandardScaler, & prints emotion predictions.
-The full results are saved to `tests/test_results.csv`.
+The full results are saved to `tests/test_results_mfcc.csv`.
 
 Author: Amy Huang
 Since: 1.0
@@ -18,15 +18,15 @@ import numpy as np
 import onnxruntime as ort
 
 from src.dataset_loader import MASTER_SET
-from src.features import extract_mfcc
+from src.mfcc_archive.features_mfcc import extract_mfcc
 
 # CONSTANT DECLARATION: ensuring project root is importable
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 sys.path.append(PROJECT_ROOT)
 
 # CONSTANT DECLARATION: paths
-TEST_FOLDER = os.path.join(os.path.dirname(__file__), "test_data")
-CSV_OUTPUT = os.path.join(os.path.dirname(__file__), "test_results.csv")
+TEST_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), "test_data")
+CSV_OUTPUT = os.path.join(os.path.dirname(__file__), "test_results_mfcc.csv")
 
 
 def run_inference(wav_path: str, session, scaler):
@@ -85,12 +85,12 @@ def main():
     # OUTPUT: loading ONNX model
     print("[INFO] Loading ONNX model...")
     session = ort.InferenceSession(
-        os.path.join(PROJECT_ROOT, "models", "audio_emotion.onnx")
+        os.path.join(PROJECT_ROOT, "models", "audio_emotion_mfcc.onnx")
     )
 
     # OUTPUT: loading scaler
     print("[INFO] Loading scaler...")
-    scaler = joblib.load(os.path.join(PROJECT_ROOT, "models", "scaler.pkl"))
+    scaler = joblib.load(os.path.join(PROJECT_ROOT, "models", "scaler_mfcc.pkl"))
 
     # PROCESS: iterating through WAV files
     if not os.path.exists(TEST_FOLDER):  # error-handling

@@ -1,4 +1,4 @@
-# run `python -m tests.test_preprocess`
+# run `python -m tests.mfcc_archive.test_preprocess_mfcc` to execute this file
 
 """
 This test module dumps out the preprocess data.
@@ -10,7 +10,7 @@ Since: 1.0
 import numpy as np
 
 from src.dataset_loader import load_all_datasets
-from src.preprocess import build_feature_dataset
+from src.mfcc_archive.preprocess_mfcc import build_feature_dataset
 
 # VARIABLE DECLARATION: loading the raw dataset info
 samples = load_all_datasets()

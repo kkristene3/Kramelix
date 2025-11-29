@@ -1,7 +1,7 @@
-# run `python -m tests.test_export_onnx`
+# run `python -m tests.mfcc_archive.test_export_onnx_mfcc`
 
 """
-This test module checks that the .h5 model converts nicely to an ONNX model & outputs the probabiliies of the predicted emotions.
+This test module checks that the .h5 model converts nicely to an ONNX model & outputs the probabilities of the predicted emotions.
 
 Author: Amy Huang
 Since: 1.0
@@ -15,7 +15,7 @@ def main():
 
     # OUTPUT: loading ONNX model
     print("[INFO] Loading ONNX model...")
-    session = ort.InferenceSession("models/audio_emotion.onnx")
+    session = ort.InferenceSession("models/audio_emotion_mfcc.onnx")
 
     # VARIABLE DECLARATION: retrieving model's expected input shape
     input_meta = session.get_inputs()[0]

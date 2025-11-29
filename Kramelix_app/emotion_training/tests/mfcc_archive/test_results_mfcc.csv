@@ -1,0 +1,14 @@
+filename,predicted_emotion,confidence
+amy_angry.wav,angry,0.828
+amy_angry2.wav,angry,0.946
+amy_calm.wav,happy,0.713
+amy_disgust.wav,disgust,0.763
+amy_fearful.wav,calm,0.996
+amy_fearful2.wav,fearful,0.960
+amy_happy.wav,calm,0.906
+amy_happy2.wav,calm,1.000
+amy_neutral.wav,angry,0.947
+amy_neutral2.wav,calm,0.392
+amy_sad.wav,calm,0.649
+amy_sad2.wav,calm,0.767
+amy_surprised.wav,disgust,0.950

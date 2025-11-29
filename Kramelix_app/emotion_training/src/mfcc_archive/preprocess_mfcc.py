@@ -1,9 +1,9 @@
 """
 This module converts raw dataset samples into numerical feature vectors for model training,
-now with PARALLEL PROCESSING for huge speedups during MFCC extraction.
+w/ parallel processing for speedups during MFCC extraction.
 
 Author: Amy Huang
-Since: 1.1  (parallel extraction enabled)
+Since: 1.0
 """
 
 from typing import Dict, List, Tuple
@@ -11,8 +11,8 @@ from typing import Dict, List, Tuple
 import numpy as np
 from joblib import Parallel, delayed
 
-from .dataset_loader import MASTER_SET
-from .features import extract_mfcc
+from ..dataset_loader import MASTER_SET
+from .features_mfcc import extract_mfcc
 
 
 def _process_single_sample(sample, label_map):
@@ -38,7 +38,19 @@ def _process_single_sample(sample, label_map):
 
     # PROCESS: extracting audio features
     try:
-        feature_vector = extract_mfcc(path)
+
+        # PROCESS: handling IEMOCAP segments if present
+        if "start" in sample and "end" in sample:  # found
+            feature_vector = extract_mfcc(
+                path,
+                start=sample["start"],
+                end=sample["end"],
+            )  # extracting segment
+
+        else:  # just extract full file
+            feature_vector = extract_mfcc(
+                path,
+            )
 
     except Exception as e:  # error-handling
         # OUTPUT:
@@ -74,6 +86,10 @@ def build_feature_dataset(samples: List[Dict]) -> Tuple[np.ndarray, np.ndarray, 
 
             label_map: dict
                 Mapping of emotion string to integer ID.
+
+    @throws
+        RuntimeError
+            Raised if no valid MFCC features were extracted from the dataset.
     """
 
     # VARIABLE DECLARATION:
@@ -93,6 +109,10 @@ def build_feature_dataset(samples: List[Dict]) -> Tuple[np.ndarray, np.ndarray, 
 
     # PROCESS: filtering out None entries (failed files)
     valid = [r for r in results if r is not None]
+
+    if len(valid) == 0:  # error-handling
+        # OUTPUT: raise error
+        raise RuntimeError("[ERROR] No valid MFCC features were extracted.")
 
     # PROCESS: separating into X (features) & y (labels)
     X, y = zip(*valid)

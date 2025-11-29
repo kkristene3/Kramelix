@@ -15,17 +15,22 @@ import librosa
 import numpy as np
 
 
-def extract_mfcc(path: str, mfcc_count: int = 40) -> np.ndarray:
+def extract_mfcc(
+    path: str,
+    mfcc_count: int = 40,
+    start: float = None,
+    end: float = None,
+) -> np.ndarray:
     """
     @brief
-        Loads a WAV file & computes an audio feature representation.
+        Loads a WAV file & computes an MFCC audio feature representation.
 
     @details
         The MFCC extraction pipeline includes:
         1. Loading audio at a fixed sampling rate (16 kHz)
-        2. Applying pre-emphasis to boost high-frequency cues
-        3. Trimming leading/trailing silence
-        4. Normalizing waveform amplitude
+        2. Normalizing waveform amplitude
+        3. Applying pre-emphasis to boost high-frequency cues
+        4. Trimming leading/trailing silence
         5. Extracting MFCC features (mfcc, delta, delta-delta)
         6. Extracting emotion-relevant features:
             - F0 pitch
@@ -44,6 +49,14 @@ def extract_mfcc(path: str, mfcc_count: int = 40) -> np.ndarray:
         mfcc_count: int
             # of MFCC coefficients (dimensions) to compute.
 
+    @param
+        start: float | None
+            (Optional) Start time in seconds for segment extraction (IEMOCAP).
+
+    @param
+        end: float | None
+            (Optional) End time in seconds for segment extraction (IEMOCAP).
+
     @return
         np.ndarray (float32)
             1D feature vector representing the audio clip.
@@ -51,7 +64,7 @@ def extract_mfcc(path: str, mfcc_count: int = 40) -> np.ndarray:
     @throws
         Exception
             Throws exceptions related to file loading, invalid audio structure, or numerical failures.
-            These are caught by preprocess.py later on.
+            These are caught by preprocess_mfcc.py later on.
 
         ValueError
             Raised if the audio file is empty after loading.
@@ -65,15 +78,30 @@ def extract_mfcc(path: str, mfcc_count: int = 40) -> np.ndarray:
     if y.size == 0:
         raise ValueError(f"Empty audio file: {path}")
 
+    # PROCESS: handling IEMOCAP segment paths
+    if start is not None and end is not None:
+
+        # VARIABLE DECLARATION: converting times to sample indices
+        start_index = int(start * sr)
+        end_index = int(end * sr)
+
+        y = y[start_index:end_index]  # segmenting waveform
+
+        if y.size == 0:  # empty segments
+            # OUTPUT: raising error
+            raise ValueError(
+                f"IEMOCAP segment produced empty audio: {path} {start}-{end}"
+            )
+
+    # PROCESS: normalizing amplitude
+    if y.std() > 0:
+        y = (y - np.mean(y)) / np.std(y)
+
     # PROCESS: boosting high frequencies (pre-emphasis)
     y = np.append(y[0], y[1:] - 0.97 * y[:-1])
 
     # PROCESS: trimming leading/trailing silence
     y, _ = librosa.effects.trim(y, top_db=40)
-
-    # PROCESS: normalizing amplitude
-    if y.std() > 0:
-        y = (y - np.mean(y)) / np.std(y)
 
     # VARIABLE DECLARATION: windowing parameters
     n_fft = int(sr * 0.025)  # 25 ms window

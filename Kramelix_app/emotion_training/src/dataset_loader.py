@@ -8,7 +8,7 @@ Datasets supported:
 3. TESS (Toronto Emotional Speech Set)
 4. SAVEE
 5. EmoDB (German Emotional Speech Database)
-6. IEMOCAP)
+6. IEMOCAP
 
 Author: Amy Huang
 Since: 1.0
@@ -404,7 +404,7 @@ def load_iemocap(path):
                 emo_eval, ann_file
             )  # extracting annotation file path
 
-            with open(ann_path, "r") as f:  # opening file
+            with open(ann_path, "r", errors="ignore") as f:  # opening file
 
                 # PROCESS: iterating through each line in annotation file
                 for line in f:
@@ -412,17 +412,50 @@ def load_iemocap(path):
                     if "[" not in line or "]" not in line:  # invalid line
                         continue  # skipping
 
-                    # EXAMPLE LINE: [1.03 - 2.22]    hap
-                    ts, emotion = line.split("]")[0][1:], line.split("\t")[1].strip()
-                    start, end = map(float, ts.split("-"))
-                    emotion = emotion.lower()[:3]  # hap, ang, sad, etc.
+                    # PROCESS: parsing timestamps (e.g. "[1.03 - 2.22]")
+                    try:
+                        ts_block = line.split("]")[0]  # e.g. "[1.03 - 2.22"
+                        ts_block = ts_block.replace("[", "")  # e.g. "1.03 - 2.22"
+                        start_str, end_str = ts_block.split("-")
+                        start = float(start_str.strip())
+                        end = float(end_str.strip())
 
-                    if emotion not in IEMOCAP_MAP:  # unsupported emotion
+                    except Exception:  # skipping malformed timestamp lines
+                        continue
+
+                    emotion = None  # temp var
+
+                    # PROCESS: checking for parentheses-based emotion first
+                    if "(" in line and ")" in line:  # found
+                        inner = (
+                            line.split("(")[1].split(")")[0].strip().lower()
+                        )  # extracting
+
+                        if inner in IEMOCAP_MAP:  # valid emotion
+                            emotion = inner  # assigning
+
+                    if emotion is None:  # need to try tab/space-based parsing instead
+
+                        # PROCESS: splitting line into tokens
+                        tokens = line.split()  # split on any whitespace
+
+                        # PROCESS: iterating backwards to find last valid token
+                        for tok in reversed(tokens):
+                            tok = tok.lower().strip("(),")  # cleaning
+
+                            if tok in IEMOCAP_MAP:  # valid emotion
+                                emotion = tok  # assigning
+                                break
+
+                    if emotion is None:  # unsupported emotion
                         continue  # skipping
 
                     # VARIABLE DECLARATION: deriving wav file name (same prefix)
                     wav_name = ann_file.replace(".txt", ".wav")
                     wav_path = os.path.join(wav_dir, wav_name)
+
+                    if not os.path.exists(wav_path):  # skipping mismatched files
+                        continue
 
                     # PROCESS: appending parsed sample entry
                     samples.append(
