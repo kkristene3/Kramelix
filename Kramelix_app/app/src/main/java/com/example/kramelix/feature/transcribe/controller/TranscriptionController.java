@@ -1,6 +1,7 @@
 package com.example.kramelix.feature.transcribe.controller;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,8 +18,10 @@ import com.example.kramelix.feature.chat.model.Message;
 import com.example.kramelix.feature.chat.model.Role;
 import com.example.kramelix.feature.taskexe.controller.CallController;
 import com.example.kramelix.whisperjni.Whisper;
+import com.example.kramelix.feature.emotion.controller.EmotionController;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -224,6 +227,26 @@ public final class TranscriptionController {
                 String llmText;
 
                 try {
+
+                    EmotionController emotion = new EmotionController();
+
+                    try {
+                        emotion.predictEmotion(wavPath, new EmotionController.EmotionCallback() {
+                            @Override
+                            public void onSuccess(String label) {
+                                System.out.println(label);
+                            }
+
+                            @Override
+                            public void onError(String message) {
+                                System.out.println(message);
+                            }
+                        });
+                    }
+                    catch (IOException e){
+                        System.out.println(e);
+                    }
+
 
                     // PROCESS: building msg system & trimmed history (excludes pending msgs)
                     List<Map<String, String>> msgs = chat.buildOpenAiMessages(null, CONTEXT_BUDGET_CHARS);
