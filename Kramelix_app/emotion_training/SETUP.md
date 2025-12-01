@@ -1,6 +1,6 @@
 # Setup:
 
-**REQUIRED**: Python 3.10.xx
+**REQUIRED**: Python 3.10.xx (install this before doing any of the steps below)
 
 In the root folder (`Kramelix\Kramelix_app\emotion_training`), run:
 
@@ -18,4 +18,4 @@ In the root folder, run: `.\run_mfcc.bat` or `.\run_melspec.bat` (or just click 
 from Windows File
 Explorer)
 
-_AMY'S NOTE: both model take around 30 to 40 minutes to train._
+_AMY'S NOTE: both models take around 30 to 40 minutes to train._
