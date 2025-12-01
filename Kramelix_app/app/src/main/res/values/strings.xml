@@ -9,4 +9,6 @@
     <string name="logo_description">The logo of our app.</string>
     <string name="play_pause_button_content_desc">Play/Pause button image icon.</string>
     <string name="stop_button_content_desc">Stop button image icon.</string>
+    <string name="tone_based">Tone-Based</string>
+    <string name="text_based">Text-Based</string>
 </resources>
