@@ -18,4 +18,4 @@ In the root folder, run: `.\run_mfcc.bat` or `.\run_melspec.bat` (or just click 
 from Windows File
 Explorer)
 
-_AMY'S NOTE: both models take around 30 to 40 minutes to train._
+_AMY'S NOTE: both models take around 30 to 50 minutes to train._
