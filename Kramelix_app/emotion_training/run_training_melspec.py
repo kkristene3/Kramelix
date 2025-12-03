@@ -27,7 +27,7 @@ if __name__ == "__main__":
     print(f"[INFO] Label map: {label_map}")
 
     print("[INFO] Training Mel-CNN model...")
-    model, history = train_cnn(X, y)
+    model, history, test_split = train_cnn(X, y)
 
     # PROCESS: saving extracted feature matrix (for data analysis convenience later)
     np.save("models/features_X_melspec.npy", X)
