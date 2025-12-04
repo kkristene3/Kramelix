@@ -7,11 +7,13 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.kramelix.BuildConfig;
+import com.example.kramelix.R;
 import com.example.kramelix.chatgpt.LlmClient;
 import com.example.kramelix.feature.chat.controller.ChatController;
 import com.example.kramelix.feature.chat.model.Message;
@@ -109,6 +111,13 @@ public final class TranscriptionController {
     @Nullable
     private String modelPathAbs;
 
+    /**
+     * Toggle button for tone vs text
+     */
+    private ToggleButton modelToggle;
+
+
+
     // -------------------- LIFECYCLE --------------------
 
     /**
@@ -186,7 +195,7 @@ public final class TranscriptionController {
      * @noinspection OverlyComplexMethod, OverlyLongLambda
      */
     @SuppressLint("LogConditional")
-    public void transcribeAndReply(@NonNull File wavPath, @NonNull Consumer<? super String> speak) {
+    public void transcribeAndReply(@NonNull File wavPath, @NonNull Consumer<? super String> speak, boolean toneToggle) {
 
         // PROCESS: running the pipeline on a background thread to avoid blocking UI
         new Thread(() -> {
@@ -223,99 +232,181 @@ public final class TranscriptionController {
                 // PROCESS: adding ASSISTANT pending bubble (pulses + dots)
                 Message assistantPending = chat.addPending(Role.ASSISTANT, "…");
 
-                // PROCESS: calling LLM (still on worker thread)
-                String llmText;
-
-                try {
-
-                    //TODO Verify toggle button for tone vs text
-                    //if tone:
+                //if tone:
+                if (toneToggle){
                     EmotionController emotion = new EmotionController();
 
                     try {
                         emotion.predictEmotion(wavPath, new EmotionController.EmotionCallback() {
                             @Override
                             public void onSuccess(String label) {
-                                System.out.println(label);
+
+                                //A GOOD PROGRAMMER WOULD HAVE TURNED THIS INTO A FUNCTION
+                                //BUT I AM NOT ONE OF THOSE
+                                //SO I COPY AND PASTED
+
+                                // PROCESS: calling LLM (still on worker thread)
+                                String llmText;
+                                try {
+                                    // PROCESS: building msg system & trimmed history (excludes pending msgs)
+                                    List<Map<String, String>> msgs = chat.buildOpenAiMessages(null, CONTEXT_BUDGET_CHARS);
+
+                                    // PROCESS: injecting contact list into LLM context if needed
+                                    CallController callController = CallController.getInstance(ctx);
+                                    List<String> contacts = callController.getAllContactNames();
+
+                                    if (!msgs.isEmpty()) {
+
+                                        Map<String, String> last = msgs.get(msgs.size() - 1);
+
+                                        if ("user".equalsIgnoreCase(last.get("role"))) {
+
+                                            String userText = Objects.requireNonNull(last.get("content")).toLowerCase();
+
+                                            // FIXME OPTIMIZE: there's definitely a better way to do this
+                                            // VARIABLE DECLARATION: recognizing intent to call
+                                            boolean likelyCallIntent = userText.contains("call") || userText.contains("dial");
+
+                                            if (likelyCallIntent && !contacts.isEmpty()
+                                                    && !Objects.requireNonNull(last.get("content")).contains("Contacts on device:")) {
+
+                                                // PROCESS: appending contact names for LLM to reason about
+                                                String updatedContent = last.get("content") + "\nContacts on device: " + contacts;
+                                                last.put("content", updatedContent);
+
+                                                // LOG OUTPUT: debugging
+                                                Log.i(TAG, "Injected contact list into LLM context: " + contacts);
+
+                                            }
+
+                                        }
+
+                                    }
+
+                                    // PROCESS: sending everything to LLM
+                                    llmText = llm.complete(BuildConfig.OPENAI_API_KEY, msgs, toneToggle, label);
+
+                                } catch (RuntimeException e) { // error-handling
+
+                                    // LOG OUTPUT:
+                                    Log.e(TAG, "LLM call failed", e);
+
+                                    // TODO: output a better msg for the user
+                                    llmText = "[llm error: " + e.getClass().getSimpleName() + "]";
+
+                                }
+
+                                String safeResp = (null == llmText || llmText.isBlank()) ? "[no response given]" : llmText;
+
+                                // PROCESS: replacing ASSISTANT pending w/ final response
+                                chat.update(assistantPending, safeResp, false);
+
+                //               // LOG OUTPUT:
+                //               Log.e(TAG, "Full conversation:" + chat.getConversationJson());
+
+                                // PROCESS: running TTS
+                                if (!"[no response given]".equals(safeResp)) {
+
+                                    try {
+                                        speak.accept(safeResp); // e.g. ttsController.speak(safeResp)
+                                    } catch (RuntimeException ttsErr) { // error-handling
+                                        // LOG OUTPUT:
+                                        Log.w(TAG, "TTS failed", ttsErr);
+                                    }
+
+                                }
                             }
 
                             @Override
+                            //IF WE CAN'T CONNECT TO THE LOCAL SERVER
+                            //TODO Make the AI bubble stop pending and give an error to the user instead, telling them to go to the other mode
                             public void onError(String message) {
                                 System.out.println(message);
                             }
                         });
                     }
+
                     catch (IOException e){
                         System.out.println(e);
                     }
+                }
 
 
-                    // PROCESS: building msg system & trimmed history (excludes pending msgs)
-                    List<Map<String, String>> msgs = chat.buildOpenAiMessages(null, CONTEXT_BUDGET_CHARS);
+                //NO TONE
+                else{
 
-                    // PROCESS: injecting contact list into LLM context if needed
-                    CallController callController = CallController.getInstance(ctx);
-                    List<String> contacts = callController.getAllContactNames();
+                    //SAME CODE AGAIN BUT WITH NO TONE, LETS GO
 
-                    if (!msgs.isEmpty()) {
+                    // PROCESS: calling LLM (still on worker thread)
+                    String llmText;
+                    try {
+                        // PROCESS: building msg system & trimmed history (excludes pending msgs)
+                        List<Map<String, String>> msgs = chat.buildOpenAiMessages(null, CONTEXT_BUDGET_CHARS);
 
-                        Map<String, String> last = msgs.get(msgs.size() - 1);
+                        // PROCESS: injecting contact list into LLM context if needed
+                        CallController callController = CallController.getInstance(ctx);
+                        List<String> contacts = callController.getAllContactNames();
 
-                        if ("user".equalsIgnoreCase(last.get("role"))) {
+                        if (!msgs.isEmpty()) {
 
-                            String userText = Objects.requireNonNull(last.get("content")).toLowerCase();
+                            Map<String, String> last = msgs.get(msgs.size() - 1);
 
-                            // FIXME OPTIMIZE: there's definitely a better way to do this
-                            // VARIABLE DECLARATION: recognizing intent to call
-                            boolean likelyCallIntent = userText.contains("call") || userText.contains("dial");
+                            if ("user".equalsIgnoreCase(last.get("role"))) {
 
-                            if (likelyCallIntent && !contacts.isEmpty()
-                                    && !Objects.requireNonNull(last.get("content")).contains("Contacts on device:")) {
+                                String userText = Objects.requireNonNull(last.get("content")).toLowerCase();
 
-                                // PROCESS: appending contact names for LLM to reason about
-                                String updatedContent = last.get("content") + "\nContacts on device: " + contacts;
-                                last.put("content", updatedContent);
+                                // FIXME OPTIMIZE: there's definitely a better way to do this
+                                // VARIABLE DECLARATION: recognizing intent to call
+                                boolean likelyCallIntent = userText.contains("call") || userText.contains("dial");
 
-                                // LOG OUTPUT: debugging
-                                Log.i(TAG, "Injected contact list into LLM context: " + contacts);
+                                if (likelyCallIntent && !contacts.isEmpty()
+                                        && !Objects.requireNonNull(last.get("content")).contains("Contacts on device:")) {
+
+                                    // PROCESS: appending contact names for LLM to reason about
+                                    String updatedContent = last.get("content") + "\nContacts on device: " + contacts;
+                                    last.put("content", updatedContent);
+
+                                    // LOG OUTPUT: debugging
+                                    Log.i(TAG, "Injected contact list into LLM context: " + contacts);
+
+                                }
 
                             }
 
                         }
 
-                    }
+                        // PROCESS: sending everything to LLM
+                        llmText = llm.complete(BuildConfig.OPENAI_API_KEY, msgs, toneToggle, "");
 
-                    // PROCESS: sending everything to LLM
-                    llmText = llm.complete(BuildConfig.OPENAI_API_KEY, msgs);
+                    } catch (RuntimeException e) { // error-handling
 
-                } catch (RuntimeException e) { // error-handling
-
-                    // LOG OUTPUT:
-                    Log.e(TAG, "LLM call failed", e);
-
-                    // TODO: output a better msg for the user
-                    llmText = "[llm error: " + e.getClass().getSimpleName() + "]";
-
-                }
-
-                String safeResp = (null == llmText || llmText.isBlank()) ? "[no response given]" : llmText;
-
-                // PROCESS: replacing ASSISTANT pending w/ final response
-                chat.update(assistantPending, safeResp, false);
-
-//                // LOG OUTPUT:
-//                Log.e(TAG, "Full conversation:" + chat.getConversationJson());
-
-                // PROCESS: running TTS
-                if (!"[no response given]".equals(safeResp)) {
-
-                    try {
-                        speak.accept(safeResp); // e.g. ttsController.speak(safeResp)
-                    } catch (RuntimeException ttsErr) { // error-handling
                         // LOG OUTPUT:
-                        Log.w(TAG, "TTS failed", ttsErr);
+                        Log.e(TAG, "LLM call failed", e);
+
+                        // TODO: output a better msg for the user
+                        llmText = "[llm error: " + e.getClass().getSimpleName() + "]";
+
                     }
 
+                    String safeResp = (null == llmText || llmText.isBlank()) ? "[no response given]" : llmText;
+
+                    // PROCESS: replacing ASSISTANT pending w/ final response
+                    chat.update(assistantPending, safeResp, false);
+
+                    //               // LOG OUTPUT:
+                    //               Log.e(TAG, "Full conversation:" + chat.getConversationJson());
+
+                    // PROCESS: running TTS
+                    if (!"[no response given]".equals(safeResp)) {
+
+                        try {
+                            speak.accept(safeResp); // e.g. ttsController.speak(safeResp)
+                        } catch (RuntimeException ttsErr) { // error-handling
+                            // LOG OUTPUT:
+                            Log.w(TAG, "TTS failed", ttsErr);
+                        }
+
+                    }
                 }
 
             } catch (RuntimeException e) { // error-handling

@@ -42,7 +42,6 @@ async def predict(audio: UploadFile = File(...)):
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             tmp.write(await audio.read())
             wav_path = tmp.name
-            print("here")
 
         label, prompt = run_inference(wav_path, session, input_name, id_to_label)
         return label
@@ -50,3 +49,6 @@ async def predict(audio: UploadFile = File(...)):
         print("error", str(e))
         return "ERROR: " + str(e)
 
+@app.get("/ping")
+async def ping():
+    return {"status": "available"}
