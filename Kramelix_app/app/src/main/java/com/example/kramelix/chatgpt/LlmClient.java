@@ -114,6 +114,7 @@ public final class LlmClient {
         }
 
         // PROCESS: calling Python-side chat() safely
+        //TODO Add a parameter, sending the state of the toggle to python so we know which personality to use
         PyObject resp = mod.callAttr("chat", (null == apiKey ? "" : apiKey), json);
 
         // Splitting the response into task command (index 0) and chat response (index 1)
