@@ -87,6 +87,7 @@ public final class MainActivity extends AppCompatActivity {
     private ImageButton playResumeMusicButton;
     private ImageButton stopMusicButton;
     private TextView alarmCountdownText;
+    private ToggleButton toggleEmotion;
 
     // -------------------- CONTROLLERS --------------------
     private ChatController chatController;
@@ -164,6 +165,7 @@ public final class MainActivity extends AppCompatActivity {
         playResumeMusicButton = findViewById(R.id.playResumeMusicButton);
         stopMusicButton = findViewById(R.id.stopMusicButton);
         alarmCountdownText = findViewById(R.id.alarmCountdownText);
+        toggleEmotion = findViewById(R.id.toggleEmotion);
 
         // VARIABLE DECLARATION: prepare the session's WAV path (e.g. <app>/files/Music/recording.wav)
         wavPath = new File(getExternalFilesDir(Environment.DIRECTORY_MUSIC), "recording.wav");
@@ -241,6 +243,17 @@ public final class MainActivity extends AppCompatActivity {
 
         // set stop music button listener
         stopMusicButton.setOnClickListener(v -> taskController.stopMusic());
+
+        // set toggle button to alternate between text-based vs tone-based emotion detection
+        toggleEmotion.setOnClickListener(v -> {
+            if (toggleEmotion.isChecked()) {
+                // toggle button is checked
+                Log.d("MainActivity", "Emotion Detection is: TONE-BASED");
+            } else {
+                // toggle button is unchecked
+                Log.d("MainActivity", "Emotion Detection is: TEXT-BASED");
+            }
+        });
     }
 
     /**
