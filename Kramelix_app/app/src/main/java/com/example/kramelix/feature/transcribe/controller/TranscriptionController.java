@@ -228,6 +228,8 @@ public final class TranscriptionController {
 
                 try {
 
+                    //TODO Verify toggle button for tone vs text
+                    //if tone:
                     EmotionController emotion = new EmotionController();
 
                     try {

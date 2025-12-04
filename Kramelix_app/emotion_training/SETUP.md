@@ -21,7 +21,7 @@ Explorer)
 _AMY'S NOTE: both model take around 30 to 40 minutes to train._
 
 How to run server.py:
-In network_security_config.xml: If not already done, change `YOUR IP` to your actual IP
+In network_security_config.xml: If not already done, change `YOUR IP` to your actual IP and add your IP to your local.properties (save it as SERVER_URL)
 In the root folder (`Kramelix\Kramelix_app\emotion_training`), run:
 1. `py -3.10 -m venv venv` (creating a virtual environment for Python 3.10)
 2. `venv\Scripts\activate` (entering the venv)
