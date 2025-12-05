@@ -30,6 +30,7 @@ import com.example.kramelix.feature.record.controller.RecordController;
 import com.example.kramelix.feature.taskexe.controller.TaskController;
 import com.example.kramelix.feature.transcribe.controller.TranscriptionController;
 import com.example.kramelix.feature.tts.controller.TTSController;
+import com.example.kramelix.feature.emotion.controller.EmotionController;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -103,6 +104,8 @@ public final class MainActivity extends AppCompatActivity {
     private File modelFile;
 
     private boolean recordPendingAfterPermission;
+
+    private boolean toneToggle = false;
 
     // -------------------- LIFECYCLE --------------------
 
@@ -247,11 +250,29 @@ public final class MainActivity extends AppCompatActivity {
         // set toggle button to alternate between text-based vs tone-based emotion detection
         toggleEmotion.setOnClickListener(v -> {
             if (toggleEmotion.isChecked()) {
+                Toast.makeText(this, "Please wait a few seconds while we process your request", Toast.LENGTH_LONG).show();
                 // toggle button is checked
-                Log.d("MainActivity", "Emotion Detection is: TONE-BASED");
+                EmotionController emotion = new EmotionController();
+                emotion.pingServer(new EmotionController.EmotionCallback() {
+                    public void onSuccess(String label) {
+                        runOnUiThread(()-> {
+                            Toast.makeText(MainActivity.this, "Emotion Detection is: TONE-BASED", Toast.LENGTH_LONG).show();
+                            toneToggle = true;
+                        });
+                    }
+                    public void onError(String message) {
+                        runOnUiThread(()->{
+                            Toast.makeText(MainActivity.this, "TONE-BASED Detection unavailable right now", Toast.LENGTH_LONG).show();
+                            toggleEmotion.setChecked(false);
+                            toneToggle = false;
+                        });
+                    }
+                });
+
             } else {
                 // toggle button is unchecked
-                Log.d("MainActivity", "Emotion Detection is: TEXT-BASED");
+                Toast.makeText(this, "Emotion Detection is: TEXT-BASED", Toast.LENGTH_LONG).show();
+                toneToggle = false;
             }
         });
     }
@@ -346,7 +367,8 @@ public final class MainActivity extends AppCompatActivity {
             // PROCESS: starting transcription pipeline
             transcriptionController.transcribeAndReply(
                     wavPath,
-                    ttsController::speak
+                    ttsController::speak,
+                    toneToggle
             );
 
         }
