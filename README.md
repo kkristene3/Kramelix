@@ -5,7 +5,7 @@ This GitHub repository is for CSI 4900 - Honours Project.
 ## 📝 Description
 
 Kramelix is a virtual AI assistant that takes emotion into consideration and performs basic-level Android phone tasks.
-The user has the choice to set the LLM to detect their emotion through text or tone using a toggle-button.
+A user has the choice to have the LLM to detect their emotion through text or tone. Changing between modes using a toggle button.
 
 ## 🔨 Installation / Setup
 
@@ -36,11 +36,6 @@ To run the tone detection for the LLM, you will need to add your IP address to y
 2. Copy the IPv4 address (or IPv6 address if applicable) of your LAN
 3. Follow the instrutions in: [SETUP.md](Kramelix_app/emotion_training/SETUP.md#file-setup)
 
-### Troubleshooting Builds / GitIgnore Information
-
--   To completely reset the project build, delete the local instances of `/Kramelix_app/.gradle`, `/Kramelix_app/build`, `/Kramelix_app/app/build`, and `/Kramelix_app/app/.cxx`. Afterwards, start from step 4 of the Installation/Setup section above, and these folders should rebuild.
--   When committing files, the `.gitignore` file will automatically filter out any local build folders that don't need to be shared between developers. This mainly includes the above-mentioned folders^. **Anything else should be committed.**
-
 ### Microphone Setup on Emulator
 
 To record audio through Android Studio emulator devices, ensure that the following is set up:
@@ -67,8 +62,11 @@ To record audio through Android Studio emulator devices, ensure that the followi
 
 Once the above instructions have been completed, the app can be used. Click the microphone/record button to talk to the LLM. When you are done speaking, click the button again and wait for the LLM's response. The response will be displayed on the screen and read back to you.
 
-**Swap Between how Emotion is Detected**
-- Use the toggle button in the top right of the app to switch between the LLM using text to detect emotion and the LLM using tone to detect emotion.
+**Swap Between How Emotion is Detected**
+- Use the pink toggle button in the top right of the app to switch between the LLM using text to detect emotion and the LLM using tone to detect emotion.
+
+**Basic Communication**
+- Use the LLM to talk about your day, vent concerns, or get advice. Talk to it however you want!
 
 **Tasks to Ask the LLM**
 - Play Music 🎵: ask the LLM to play a song given the song title, the artist name, or to randmly play a song based on a music genre
@@ -76,10 +74,14 @@ Once the above instructions have been completed, the app can be used. Click the 
 - Set a Timer ⏰: ask the LLM to set a timer to go off in _n mins/hours_
 - Call a Contact ☎️: ask the LLM to call a specific person from your contacts (_Note: emulators cannot be used for this_)
 
-**Basic Communication**
-- <!-- write what users can do apart from making the llm do tasks -> like if a user just wants to vent their feelings or ask for advice -->
+## ❗ Troubleshooting Builds / GitIgnore Information
+
+-   To completely reset the project build, delete the local instances of `/Kramelix_app/.gradle`, `/Kramelix_app/build`, `/Kramelix_app/app/build`, and `/Kramelix_app/app/.cxx`. Afterwards, start from step 4 of the Installation/Setup section above, and these folders should rebuild.
+-   When committing files, the `.gitignore` file will automatically filter out any local build folders that don't need to be shared between developers. This mainly includes the above-mentioned folders^. **Anything else should be committed.**
 
 ## ✨ Authors
 💚 **Amy Huang**
+
 💛 **Alex Oprea**
+
 🩷 **Kristen Duong**
