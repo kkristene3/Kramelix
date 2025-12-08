@@ -190,7 +190,7 @@ public final class LlmClient {
                 }
 
                 // PROCESS: call llm to get a response
-                resp = mod.callAttr("chat", (apiKey == null ? "" : apiKey), new org.json.JSONArray(failurePrompt).toString());
+                resp = mod.callAttr("chat", (apiKey == null ? "" : apiKey), new org.json.JSONArray(failurePrompt).toString(), toneToggle, "");
 
                 // PROCESS: return only the LLM message (ignore task command for failure)
                 String[] failureParts = splitMsg(resp.toString());
