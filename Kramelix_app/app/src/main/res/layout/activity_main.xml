@@ -150,7 +150,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="26dp"
         android:layout_marginEnd="26dp"
-        android:backgroundTint="@color/custom_pink"
+        android:background="@drawable/toggle_button_bg"
         android:fontFamily="@font/inter_medium"
         android:textColor="@color/raisin_black"
         android:textOff="@string/text_based"
