@@ -81,7 +81,7 @@ public final class LlmClient {
      * @return The assistant's response, or {@code null} if the Python module failed or returned nothing.
      */
     @Nullable
-    public String complete(@Nullable String apiKey, @NonNull Iterable<? extends Map<String, String>> messages) {
+    public String complete(@Nullable String apiKey, @NonNull Iterable<? extends Map<String, String>> messages, boolean toneToggle, String emotion) {
 
         // PROCESS: initializing Chaquopy runtime once
         if (!Python.isStarted()) {
@@ -114,7 +114,8 @@ public final class LlmClient {
         }
 
         // PROCESS: calling Python-side chat() safely
-        PyObject resp = mod.callAttr("chat", (null == apiKey ? "" : apiKey), json);
+        //TODO Add a parameter, sending the state of the toggle to python so we know which personality to use
+        PyObject resp = mod.callAttr("chat", (null == apiKey ? "" : apiKey), json, toneToggle, emotion);
 
         // Splitting the response into task command (index 0) and chat response (index 1)
         String[] respParts = splitMsg(resp.toString());
@@ -189,7 +190,7 @@ public final class LlmClient {
                 }
 
                 // PROCESS: call llm to get a response
-                resp = mod.callAttr("chat", (apiKey == null ? "" : apiKey), new org.json.JSONArray(failurePrompt).toString());
+                resp = mod.callAttr("chat", (apiKey == null ? "" : apiKey), new org.json.JSONArray(failurePrompt).toString(), toneToggle, "");
 
                 // PROCESS: return only the LLM message (ignore task command for failure)
                 String[] failureParts = splitMsg(resp.toString());

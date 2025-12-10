@@ -134,9 +134,28 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="35dp"
-        android:layout_marginEnd="35dp"
+        android:layout_marginStart="35dp"
         android:fontFamily="@font/inter_medium"
+        android:shadowColor="@color/raisin_black"
+        android:shadowRadius="0.3"
         android:text="@string/empty_string"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Default on toggle button is text-based
+    > clicking on button will switch to tone-based model -->
+    <ToggleButton
+        android:id="@+id/toggleEmotion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="26dp"
+        android:layout_marginEnd="26dp"
+        android:background="@drawable/toggle_button_bg"
+        android:fontFamily="@font/inter_medium"
+        android:textColor="@color/raisin_black"
+        android:textOff="@string/text_based"
+        android:textOn="@string/tone_based"
+        android:textSize="10sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

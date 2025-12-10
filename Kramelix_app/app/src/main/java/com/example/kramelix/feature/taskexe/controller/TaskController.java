@@ -75,6 +75,9 @@ public final class TaskController {
     private String songReadableName;
     private String songArtist;
 
+    // -------------------- ALARM TASK VARIABLE --------------------
+    private final List<Long> alarmTimes = new ArrayList<>();
+
     // -------------------- NOTIFICATION CHANNEL --------------------
     private static final String CHANNEL_ID = "Media Channel";
     private NotificationManager notificationManager;
@@ -634,10 +637,14 @@ public final class TaskController {
             // PROCESS: calculate trigger time in milliseconds
             long triggerAtMillis = SystemClock.elapsedRealtime() + (long) minutes * 60 * 1000;
 
+            // track how many alarms are set and create a unique code for each
+            alarmTimes.add(triggerAtMillis);
+            int requestCode = alarmTimes.size();
+
             // PROCESS: create alarm
             AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             Intent intent = new Intent(context, AlarmReceiver.class);
-            PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            PendingIntent alarmIntent = PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
             // FIXME OPTIMIZE: could probably remove the if-block here bc the SDK_INT is always >= 24
             // PROCESS: set the alarm to go off at an exact time, regardless if phone is in low-power "idle" or "doze" mode.
@@ -663,7 +670,7 @@ public final class TaskController {
             new android.os.Handler(context.getMainLooper()).post(() -> new CountDownTimer(minutes * 60L * 1000L, 1000) {
                 @Override
                 public void onFinish() {
-                    hideAlarmtime(); // hide time once alarm triggers
+                    //hideAlarmtime(); // hide time once alarm triggers
                 }
 
                 @SuppressLint("DefaultLocale")
