@@ -1,6 +1,13 @@
 # Setup:
 
-**REQUIRED**: Python 3.10.xx (install this before doing any of the steps below)
+> [!IMPORTANT]  
+> **REQUIRED**: Python 3.10.xx (install this before doing any of the steps below).
+> 
+> For Windows systems, download Python version 3.10.xx from https://www.python.org/downloads/windows/
+> 
+> Ensure that this version is also installed as a PATH variable.
+>
+> Ensure that Windows Long Path Support is also enabled.
 
 In the root folder (`Kramelix\Kramelix_app\emotion_training`), run:
 
