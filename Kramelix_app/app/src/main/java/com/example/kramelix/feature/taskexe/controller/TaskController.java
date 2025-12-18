@@ -624,14 +624,14 @@ public final class TaskController {
     /**
      * Function that sets an alarm based on the time (minutes) given by user
      *
-     * @param inputStr String representing for how long, in minutes, to set the alarm for
+     * @param inputTime String representing for how long to set the alarm for
      */
-    private boolean setAlarm(String inputStr) {
+    private boolean setAlarm(String inputTime) {
         try {
 
             // PROCESS: convert input string to int
             // noinspection DynamicRegexReplaceableByCompiledPattern
-            String timeStr = inputStr.replaceAll("[^0-9]", ""); // keeps digits only
+            String timeStr = inputTime.replaceAll("[^0-9]", ""); // keeps digits only
             int minutes = Integer.parseInt(timeStr);
 
             // PROCESS: calculate trigger time in milliseconds
@@ -646,22 +646,12 @@ public final class TaskController {
             Intent intent = new Intent(context, AlarmReceiver.class);
             PendingIntent alarmIntent = PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-            // FIXME OPTIMIZE: could probably remove the if-block here bc the SDK_INT is always >= 24
             // PROCESS: set the alarm to go off at an exact time, regardless if phone is in low-power "idle" or "doze" mode.
-            // Check the Android version of device and set the alarm appropriately
-            if (android.os.Build.VERSION_CODES.M <= android.os.Build.VERSION.SDK_INT) { // for devices running Android's current version
-                alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                        triggerAtMillis,
-                        alarmIntent
-                );
-            } else { // for devices running old versions of Android
-                alarmManager.setExact(
-                        AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                        triggerAtMillis,
-                        alarmIntent
-                );
-            }
+            alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                    triggerAtMillis,
+                    alarmIntent
+            );
 
             // show countdown
             showAlarmTime();
@@ -789,16 +779,6 @@ public final class TaskController {
     private void showAlarmTime() {
         // runs on the main thread
         new android.os.Handler(context.getMainLooper()).post(() -> alarmCountdownText.setVisibility(View.VISIBLE));
-    }
-
-    /**
-     * Hides the alarm time once an alarm has gone off
-     *
-     * @noinspection WeakerAccess
-     */
-    void hideAlarmtime() {
-        // runs on the main thread
-        new android.os.Handler(context.getMainLooper()).post(() -> alarmCountdownText.setVisibility(View.GONE));
     }
 
     // ------------------------------- HELPER FUNCTION -------------------------------
