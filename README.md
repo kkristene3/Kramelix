@@ -80,8 +80,8 @@ Once the above instructions have been completed, the app can be used. Click the 
 -   When committing files, the `.gitignore` file will automatically filter out any local build folders that don't need to be shared between developers. This mainly includes the above-mentioned folders^. **Anything else should be committed.**
 
 ## ✨ Authors
-💚 **Amy Huang**
+💛 **Amy Huang**
 
-💛 **Alex Oprea**
+💚 **Alex Oprea**
 
 🩷 **Kristen Duong**
