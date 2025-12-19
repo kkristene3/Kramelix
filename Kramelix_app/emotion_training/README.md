@@ -24,8 +24,9 @@ In the root folder (`Kramelix\Kramelix_app\emotion_training`), run:
 `python -m tests.[folder_name].[script_name]` (e.g.
 `python -m tests.mfcc_archive.test_sample_data_mfcc`)
 
-_NOTE: (so far) only `test_sample_data_mfcc.py` and `test_sample_data_melspec.py` requires actual
-test data._
+> [!NOTE]
+> Only `test_sample_data_mfcc.py` and `test_sample_data_melspec.py` currently require actual
+test data.
 
 ## 🗺️ Real-World Tests:
 
@@ -33,4 +34,5 @@ In the test folder, we can import our own .WAV files locally to
 `Kramelix\Kramelix_app\emotion_training\tests\test_data` to see how our models perform on real-world
 data.
 
-_AMY'S NOTE: DO NOT COMMIT TEST DATA, OR ELSE, WE RISK BLOATING OUR REPO._
+> [!CAUTION]
+> DO NOT COMMIT TEST DATA, OR ELSE, WE RISK BLOATING OUR REPO.
