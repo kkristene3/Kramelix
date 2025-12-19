@@ -31,7 +31,7 @@ _AMY'S NOTE: both models take around 30 to 50 minutes to train._
 
 ### File Setup
 1. In (`Kramelix_app/app/src/main/res/xml/network_security_config.xml`): If not already done, change `YOUR IP` to your actual IP 
-2. In your local.properties file: Enter `SERVER_URL = [YOUR IP]`
+2. In your local.properties file: Enter `SERVER_URL = [YOUR IP]:8000`
 
 ### Command Prompt Setup
 In the root folder (`Kramelix\Kramelix_app\emotion_training`), open a **command prompt** and run:
@@ -39,5 +39,5 @@ In the root folder (`Kramelix\Kramelix_app\emotion_training`), open a **command 
 2. `venv\Scripts\activate` (entering the venv)
 3. `pip install --upgrade pip`
 4. `pip install -r requirements.txt`
-5. `python -m pip install fastapi uvicorn[standard] onnxruntime librosa soundfile numpy` (I will get rid of repeats and add these to requirements.txt soon)
+5. `python -m pip install fastapi uvicorn[standard] onnxruntime librosa soundfile numpy`
 6. `python -m uvicorn server:app --host 0.0.0.0 --port 8000`
